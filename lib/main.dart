@@ -221,7 +221,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             }
             if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
               _scrollController.animateTo(
-                (_scrollController.offset + 360).clamp(0, _scrollController.position.maxScrollExtent),
+                (_scrollController.offset + 360).clamp(0, _scrollController.position.maxScrollExtent).toDouble(),
                 duration: const Duration(milliseconds: 320),
                 curve: Curves.easeOut,
               );
@@ -229,7 +229,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             }
             if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
               _scrollController.animateTo(
-                (_scrollController.offset - 360).clamp(0, _scrollController.position.maxScrollExtent),
+                (_scrollController.offset - 360).clamp(0, _scrollController.position.maxScrollExtent).toDouble(),
                 duration: const Duration(milliseconds: 320),
                 curve: Curves.easeOut,
               );
@@ -403,7 +403,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                     right: 30,
                     bottom: 24,
                     child: Row(
-                      children: List.generate(items.length.clamp(0, 12), (i) =>
+                      children: List.generate(items.length.clamp(0, 12).toInt(), (i) =>
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
                           margin: const EdgeInsets.symmetric(horizontal: 3),
