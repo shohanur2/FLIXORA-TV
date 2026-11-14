@@ -59,8 +59,8 @@ class TvTitle {
     );
   }
 
-  String get posterUrl => poster.isEmpty ? '' : '$_imageBase w500$poster';
-  String get backdropUrl => backdrop.isEmpty ? posterUrl : '$_imageBase original$backdrop';
+  String get posterUrl => poster.isEmpty ? '' : '${_imageBase}w500$poster';
+  String get backdropUrl => backdrop.isEmpty ? posterUrl : '${_imageBase}original$backdrop';
 }
 
 class TvCatalog {
