@@ -24,28 +24,33 @@ jobs:
       - name: Generate Android platform project
         run: flutter create --platforms=android --org com.flixora --project-name flixora_tv .
 
-      - name: Configure Android TV launcher support
+      - name: Configure Android TV launcher and landscape mode
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path("android/app/src/main/AndroidManifest.xml")
           s = p.read_text()
-          import re
           tv = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
           if 'android.intent.category.LEANBACK_LAUNCHER' not in s:
               s, count = re.subn(
-                  r'(<category\\s+android:name="android\\.intent\\.category\\.LAUNCHER"\\s*/>)',
-                  r'\\1\\n                ' + tv,
+                  r'(<category\s+android:name="android\.intent\.category\.LAUNCHER"\s*/>)',
+                  r'\1\n                ' + tv,
                   s,
                   count=1,
               )
               if count == 0:
                   raise SystemExit("Could not locate Android launcher category")
           if 'android.software.leanback' not in s:
-              s = s.replace('</manifest>', '    <uses-feature android:name="android.software.leanback" android:required="false" />\\n</manifest>')
-          s = re.sub(
+              s = s.replace(
+                  '</manifest>',
+                  '    <uses-feature android:name="android.software.leanback" android:required="false" />\n</manifest>',
+              )
+          s, _ = re.subn(
               r'(<activity[^>]*android:name="[^"]*MainActivity"[^>]*)(>)',
-              lambda m: m.group(1) if 'android:screenOrientation' in m.group(1) else m.group(1) + ' android:screenOrientation="landscape"' + m.group(2),
+              lambda m: m.group(1) if 'android:screenOrientation' in m.group(1)
+              else m.group(1) + ' android:screenOrientation="landscape"' + m.group(2),
               s,
               count=1,
           )
@@ -60,9 +65,9 @@ jobs:
 
       - name: Build APK
         env:
-          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          TMDB_API_KEY: \${{ secrets.TMDB_API_KEY }}
+          SUPABASE_URL: \${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: \${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           flutter build apk --release \
             --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
