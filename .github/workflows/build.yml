@@ -30,12 +30,25 @@ jobs:
           from pathlib import Path
           p = Path("android/app/src/main/AndroidManifest.xml")
           s = p.read_text()
-          marker = '<category android:name="android.intent.category.LAUNCHER"/>'
-          tv = '<category android:name="android.intent.category.LEANBACK_LAUNCHER"/>'
-          if tv not in s:
-              s = s.replace(marker, marker + '\n                ' + tv)
+          import re
+          tv = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
+          if 'android.intent.category.LEANBACK_LAUNCHER' not in s:
+              s, count = re.subn(
+                  r'(<category\\s+android:name="android\\.intent\\.category\\.LAUNCHER"\\s*/>)',
+                  r'\\1\\n                ' + tv,
+                  s,
+                  count=1,
+              )
+              if count == 0:
+                  raise SystemExit("Could not locate Android launcher category")
           if 'android.software.leanback' not in s:
-              s = s.replace('</manifest>', '    <uses-feature android:name="android.software.leanback" android:required="false" />\n</manifest>')
+              s = s.replace('</manifest>', '    <uses-feature android:name="android.software.leanback" android:required="false" />\\n</manifest>')
+          s = re.sub(
+              r'(<activity[^>]*android:name="[^"]*MainActivity"[^>]*)(>)',
+              lambda m: m.group(1) if 'android:screenOrientation' in m.group(1) else m.group(1) + ' android:screenOrientation="landscape"' + m.group(2),
+              s,
+              count=1,
+          )
           p.write_text(s)
           PY
 
