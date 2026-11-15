@@ -31,32 +31,40 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
           p = Path("android/app/src/main/AndroidManifest.xml")
           s = p.read_text()
-          tv = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
-          if 'android.intent.category.LEANBACK_LAUNCHER' not in s:
-              s, count = re.subn(
-                  r'(<category\\s+android:name="android\\.intent\\.category\\.LAUNCHER"\\s*/>)',
-                  r'\\1\\n                ' + tv,
-                  s,
-                  count=1,
+          leanback_category = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
+
+          if "android.intent.category.LEANBACK_LAUNCHER" not in s:
+              lines = s.splitlines()
+              launcher_index = next(
+                  (i for i, line in enumerate(lines)
+                   if "android.intent.category.LAUNCHER" in line),
+                  None,
               )
-              if count == 0:
-                  raise SystemExit("Could not locate Android launcher category")
-          if 'android.software.leanback' not in s:
+              if launcher_index is None:
+                  raise SystemExit("Could not locate Android launcher category. Manifest contents:\n" + s)
+              indent = lines[launcher_index][:len(lines[launcher_index]) - len(lines[launcher_index].lstrip())]
+              lines.insert(launcher_index + 1, indent + leanback_category)
+              s = "\n".join(lines) + "\n"
+
+          if "android.software.leanback" not in s:
               s = s.replace(
-                  '</manifest>',
-                  '    <uses-feature android:name="android.software.leanback" android:required="false" />\\n</manifest>',
+                  "</manifest>",
+                  '    <uses-feature android:name="android.software.leanback" android:required="false" />\n</manifest>',
               )
-          s, _ = re.subn(
-              r'(<activity[^>]*android:name="[^"]*MainActivity"[^>]*)(>)',
-              lambda m: m.group(1) if 'android:screenOrientation' in m.group(1)
-              else m.group(1) + ' android:screenOrientation="landscape"' + m.group(2),
-              s,
-              count=1,
-          )
+
+          activity_start = s.find("<activity")
+          while activity_start != -1:
+              activity_end = s.find(">", activity_start)
+              tag = s[activity_start:activity_end + 1]
+              if "MainActivity" in tag:
+                  if "android:screenOrientation" not in tag:
+                      s = s[:activity_end] + ' android:screenOrientation="landscape"' + s[activity_end:]
+                  break
+              activity_start = s.find("<activity", activity_end + 1)
+
           p.write_text(s)
           PY
 
