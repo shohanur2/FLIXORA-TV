@@ -24,6 +24,9 @@ jobs:
       - name: Generate Android platform project
         run: flutter create --platforms=android --org com.flixora --project-name flixora_tv .
 
+      - name: Remove generated placeholder test
+        run: rm -f test/widget_test.dart
+
       - name: Configure Android TV launcher and landscape mode
         run: |
           python3 - <<'PY'
@@ -35,8 +38,8 @@ jobs:
           tv = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
           if 'android.intent.category.LEANBACK_LAUNCHER' not in s:
               s, count = re.subn(
-                  r'(<category\s+android:name="android\.intent\.category\.LAUNCHER"\s*/>)',
-                  r'\1\n                ' + tv,
+                  r'(<category\\s+android:name="android\\.intent\\.category\\.LAUNCHER"\\s*/>)',
+                  r'\\1\\n                ' + tv,
                   s,
                   count=1,
               )
@@ -45,7 +48,7 @@ jobs:
           if 'android.software.leanback' not in s:
               s = s.replace(
                   '</manifest>',
-                  '    <uses-feature android:name="android.software.leanback" android:required="false" />\n</manifest>',
+                  '    <uses-feature android:name="android.software.leanback" android:required="false" />\\n</manifest>',
               )
           s, _ = re.subn(
               r'(<activity[^>]*android:name="[^"]*MainActivity"[^>]*)(>)',
@@ -69,9 +72,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          flutter build apk --release \
-            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
-            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+          flutter build apk --release \\
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \\
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \\
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: Upload APK
