@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -47,7 +48,6 @@ class TvTitle {
   final double rating;
 
   factory TvTitle.fromJson(Map<String, dynamic> json, String type) {
-    final date = (json['release_date'] ?? json['first_air_date'] ?? '').toString();
     return TvTitle(
       id: (json['id'] as num?)?.toInt() ?? 0,
       name: (json['title'] ?? json['name'] ?? 'Untitled').toString(),
