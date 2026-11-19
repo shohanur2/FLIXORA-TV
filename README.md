@@ -46,6 +46,7 @@ Required GitHub Actions secrets for the current catalogue/backend integration:
 - `TMDB_API_KEY`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+- `FIREBASE_GOOGLE_SERVICES_JSON_BASE64` (optional; Base64-encoded Android `google-services.json` to enable the existing Firebase push-notification integration)
 
 Only the Supabase anon/publishable key belongs in the client build. Never use a service-role key in the app.
 
