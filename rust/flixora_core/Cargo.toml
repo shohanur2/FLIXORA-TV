@@ -1,0 +1,18 @@
+[package]
+name = "flixora_core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "flixora_core"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+url = "2.5"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
