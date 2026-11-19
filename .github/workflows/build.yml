@@ -418,6 +418,14 @@ jobs:
           test -s "$GITHUB_WORKSPACE/android/app/src/main/jniLibs/armeabi-v7a/libsparkbox_ffi.so"
           test -s "$GITHUB_WORKSPACE/android/app/src/main/jniLibs/x86_64/libsparkbox_ffi.so"
 
+      - name: Restore Firebase Android client config (optional secret)
+        env:
+          FIREBASE_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -n "$FIREBASE_GOOGLE_SERVICES_JSON_BASE64" ]; then
+            printf '%s' "$FIREBASE_GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          fi
+
       - name: Install dependencies
         run: flutter pub get
 
