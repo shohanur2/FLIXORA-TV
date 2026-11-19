@@ -23,7 +23,7 @@ TV branch currently includes:
 - Android Kotlin `MainActivity.kt` and `DownloadForegroundService.kt`
 - Rust playback core and SparkBox patch scripts.
 
-The TV app's current `lib/main.dart` is still a compact TMDB-only Home scaffold. It is not yet the complete Mobile Build #1378 app. The TV branch does not yet contain a committed Android Gradle project, launcher resource set, or full mobile test suite.
+The TV `lib/main.dart` has now been replaced with the complete 19,845-line Mobile Build #1378 main application source as the feature baseline. The app has a root focus-traversal group and always-visible focus highlight strategy for TV remotes, but this is only foundational adaptation: every screen, row, selector and Player control still needs deliberate D-pad testing and TV layout work. The TV branch still does not contain a committed Android Gradle project or full launcher resource set.
 
 ## Build #1378 source inventory and gaps
 
@@ -39,7 +39,7 @@ The TV app's current `lib/main.dart` is still a compact TMDB-only Home scaffold.
 - `lib/streaming/external_catalog_service.dart`
 - Mobile Android Gradle project files and wrapper configuration
 - Mobile launcher icon resources and image assets
-- Mobile test suite (15 Dart test files)
+- (Ported during this audit) 15 Dart unit-test files
 - Supabase Edge Function source files in the mobile repository (the existing backend remains authoritative; do not redeploy or change it as part of this client port).
 
 ### Shared modules already present in TV
@@ -62,7 +62,7 @@ Mobile Build #1378 dependencies include (among others):
 - `media_kit`, `media_kit_video`, `media_kit_libs_video`, `video_player`
 - `webview_flutter`, `webview_flutter_android`
 
-The TV pubspec currently has only a subset: `ffi`, WebView, Dio, path_provider, shared_preferences, Firebase, local notifications, http, cached_network_image, Supabase and media_kit packages. It is missing several packages required by the actual mobile `main.dart` (including file_picker, connectivity_plus, app_settings, google_fonts, flutter_cache_manager, share_plus, screen_brightness and video_player). Do not add packages blindly: map each import/use to a TV-compatible implementation or supported equivalent and document intentional differences.
+The TV pubspec has been aligned with the Mobile Build #1378 dependency set, including file_picker, connectivity_plus, app_settings, google_fonts, flutter_cache_manager, share_plus, screen_brightness and video_player. Android TV runtime compatibility of each plugin still needs verification; dependency presence is not proof of a working TV interaction. The FLIXORA logo asset has also been copied and registered.
 
 ## Android and CI findings
 
@@ -77,7 +77,7 @@ The TV pubspec currently has only a subset: `ffi`, WebView, Dio, path_provider, 
 
 | Area | Current evidence | Status |
 |---|---|---|
-| Home/catalogue | TMDB-only scaffold in TV main.dart | Incomplete |
+| Home/catalogue | Full Build #1378 main.dart baseline restored; TV layout/focus still unverified | Partial |
 | Admin/Supabase catalogue merge | Supabase initialization exists; merge not integrated in TV UI | Incomplete |
 | MovieBox / WeFeed | Some shared services and native build scripts are present; TV UI integration unverified | Incomplete |
 | Player | Full mobile Player is not integrated into TV main.dart | Incomplete |
@@ -85,8 +85,8 @@ The TV pubspec currently has only a subset: `ffi`, WebView, Dio, path_provider, 
 | Subtitles | Extensive logic is embedded in mobile main.dart; full implementation not ported to TV main.dart | Incomplete |
 | Download/background download | Service and Android service files are present; TV runtime test absent | Incomplete |
 | PiP/Mini Player | Mobile PiP service copied; Android TV support and integration unverified | Incomplete |
-| Liquid Glass | Reusable surface and limited Home usage exist | Partial |
-| D-pad/remote | Home has partial navigation only | Incomplete |
+| Liquid Glass | Reusable surface exists; app-wide conversion still outstanding | Partial |
+| D-pad/remote | Root focus traversal/highlight enabled; screen-by-screen directional behavior unverified | Incomplete |
 | Android TV launcher | CI currently injects Leanback category; no committed full TV launcher resources | Partial |
 | Device testing | No verified Android TV / Google TV device acceptance report | Not done |
 
@@ -109,7 +109,7 @@ The TV pubspec currently has only a subset: `ffi`, WebView, Dio, path_provider, 
 - [x] Identify missing mobile files, dependencies and Android project configuration.
 - [x] Correct README to state the actual source baseline and incomplete status.
 - [x] Pause automatic push builds during the audit.
-- [ ] Complete source/API mapping and port the missing shared modules.
+- [ ] Complete source/API mapping and port the remaining missing assets, platform config and any required shared modules.
 - [ ] Integrate full Build #1378 application, Player and Subtitle behavior into TV.
 - [ ] Complete remote focus and Liquid Glass adaptation across all screens.
 - [ ] Commit and validate a reproducible Android TV project.
