@@ -76,6 +76,7 @@ Future<void> main() async {
 const Color bg = Color(0xFF080808);
 const Color panel = Color(0xFF181818);
 const Color gold = Color(0xFFD6AD45);
+const Color tvFocusPurple = Color(0xFF9278FF);
 const Color goldLight = Color(0xFFF2CF75);
 const Color premiumGold = Color(0xFFE8C15A);
 const Color white = Color(0xFFFFFFFF);
@@ -1653,9 +1654,41 @@ class FlixoraApp extends StatelessWidget {
           secondary: premiumGold,
           surface: panel,
         ),
-        focusColor: gold.withValues(alpha: 0.24),
-        hoverColor: gold.withValues(alpha: 0.12),
+        focusColor: tvFocusPurple.withValues(alpha: 0.30),
+        hoverColor: tvFocusPurple.withValues(alpha: 0.16),
         splashColor: gold.withValues(alpha: 0.16),
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.focused)) {
+                return tvFocusPurple.withValues(alpha: 0.34);
+              }
+              if (states.contains(WidgetState.hovered)) {
+                return tvFocusPurple.withValues(alpha: 0.18);
+              }
+              return null;
+            }),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: ButtonStyle(
+            minimumSize: const WidgetStatePropertyAll(Size(56, 48)),
+            overlayColor: WidgetStateProperty.resolveWith((states) =>
+                states.contains(WidgetState.focused)
+                    ? tvFocusPurple.withValues(alpha: 0.34)
+                    : null),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: ButtonStyle(
+            minimumSize: const WidgetStatePropertyAll(Size(56, 48)),
+            overlayColor: WidgetStateProperty.resolveWith((states) =>
+                states.contains(WidgetState.focused)
+                    ? tvFocusPurple.withValues(alpha: 0.34)
+                    : null),
+          ),
+        ),
         cardTheme: const CardThemeData(
           color: panel,
           surfaceTintColor: Colors.transparent,
@@ -19846,6 +19879,57 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
     );
   }
 
+  KeyEventResult _handleTvRemoteKey(KeyEvent event) {
+    if (event is! KeyDownEvent || _isDisposed) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.mediaPlayPause) {
+      unawaited(_togglePlay());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaPlay) {
+      if (!_isPlaying) unawaited(_togglePlay());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaPause) {
+      if (_isPlaying) unawaited(_togglePlay());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaFastForward) {
+      unawaited(_seekBy(30));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaRewind) {
+      unawaited(_seekBy(-10));
+      return KeyEventResult.handled;
+    }
+
+    // With the playback overlay hidden, the D-pad acts as transport controls.
+    // When the overlay is visible, leave arrows to Flutter's focus traversal.
+    if (!_showControls && !_isLocked) {
+      if (key == LogicalKeyboardKey.arrowLeft) {
+        unawaited(_seekBy(-10));
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowRight) {
+        unawaited(_seekBy(10));
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowUp ||
+          key == LogicalKeyboardKey.arrowDown ||
+          key == LogicalKeyboardKey.select ||
+          key == LogicalKeyboardKey.enter ||
+          key == LogicalKeyboardKey.space) {
+        setState(() => _showControls = true);
+        _startHideTimer();
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -19855,24 +19939,28 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
           _toggleFullscreen();
         }
       },
-      child: _isMiniPlayer
-          ? const IgnorePointer(child: SizedBox.expand())
-          : Scaffold(
-              backgroundColor: playerBg,
-              body: _isFullscreen
-                  ? SafeArea(
-                      top: false,
-                      bottom: false,
-                      left: false,
-                      right: false,
-                      child: _playerBody(),
-                    )
-                  : SafeArea(
-                      top: true,
-                      bottom: true,
-                      child: _playerPageContent(),
-                    ),
-            ),
+      child: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) => _handleTvRemoteKey(event),
+        child: _isMiniPlayer
+            ? const IgnorePointer(child: SizedBox.expand())
+            : Scaffold(
+                backgroundColor: playerBg,
+                body: _isFullscreen
+                    ? SafeArea(
+                        top: false,
+                        bottom: false,
+                        left: false,
+                        right: false,
+                        child: _playerBody(),
+                      )
+                    : SafeArea(
+                        top: true,
+                        bottom: true,
+                        child: _playerPageContent(),
+                      ),
+              ),
+      ),
     );
   }
 }
