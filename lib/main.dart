@@ -18,6 +18,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart' as cache_manag
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/notification_service.dart';
+import 'widgets/liquid_glass_surface.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'video_quality_service.dart';
@@ -10173,13 +10174,17 @@ Entertainment Beyond Boundaries.
               ? NoInternetScreen(onRefresh: _refreshFromOfflineScreen)
               : _currentPage(),
       extendBody: true,
-      bottomNavigationBar: _showRanking ? null : Container(
-        color: panel,
+      bottomNavigationBar: _showRanking ? null : LiquidGlassSurface(
+        radius: 22,
+        blur: 18,
+        tint: const Color(0xE60C0C14),
+        borderColor: gold.withValues(alpha: 0.30),
+        padding: EdgeInsets.zero,
         child: SafeArea(
           top: false,
           maintainBottomViewPadding: true,
           child: Container(
-            height: 56,
+            height: 62,
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: ink10, width: 0.5)),
             ),
