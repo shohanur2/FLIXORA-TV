@@ -29,10 +29,10 @@ A mobile-only interaction may receive a TV-specific equivalent, but its underlyi
 
 The current TV branch is still an incomplete port, not a finished playable release.
 
-- `lib/main.dart` now uses the full 19,845-line Mobile Build #1378 source as the feature baseline; foundational remote focus visibility and a root directional focus traversal group have been added. Screen-by-screen D-pad behavior and TV layout remain unverified.
+- `lib/main.dart` contains the full Mobile Build #1378 application baseline, including Home/catalogue, MovieBox/WeFeed integration paths, Player, Subtitle, Download and Library code. TV-specific focus traversal, Home navigation autofocus, Player media/D-pad keys and Hot Shorts D-pad controls have been added; full remote testing remains pending.
 - Shared MovieBox/Rust wrappers, streaming policies, AniList/external catalogue services, download service, PiP service, notification service, archive modules and 15 mobile unit tests have been ported.
-- Build #1378 dependencies, FLIXORA logo, Android TV Leanback manifest, landscape configuration, launcher icon densities, TV banner drawable and Android Gradle configuration are present. App-wide Liquid Glass styling and complete large-screen layout adaptation are not complete.
-- MovieBox/WeFeed integration, Admin/Supabase catalogue merge, Player and Subtitle runtime parity, comprehensive remote traversal, and end-to-end TV testing remain incomplete.
+- Build #1378 dependencies, FLIXORA logo, Android TV Leanback manifest, landscape configuration, launcher icon densities, TV banner drawable and committed Android Gradle configuration are present. Liquid Glass has been applied to Home/policy headers, bottom navigation and Player control bars; app-wide styling and large-screen layout adaptation remain incomplete.
+- MovieBox/WeFeed APIs, Admin/Supabase data, Player/Subtitle playback, native downloads/PiP and plugin behavior still need real Android TV / Google TV runtime verification.
 - Presence of a Dart wrapper or native library build step does not by itself prove the corresponding feature works on a TV device.
 
 See [the detailed Build #1378 audit](docs/BUILD_1378_SOURCE_AUDIT.md) for the source inventory, known gaps and validation plan.
@@ -50,7 +50,7 @@ Required GitHub Actions secrets for the current catalogue/backend integration:
 
 Only the Supabase anon/publishable key belongs in the client build. Never use a service-role key in the app.
 
-The current workflow generates Android project files in CI. This is a temporary scaffold arrangement and must be replaced with a reviewed, committed Android TV project configuration before release, so launcher metadata, app resources, Gradle settings, plugin configuration and TV manifest behavior are reproducible.
+The Android Gradle files, TV manifest, launcher resources and themes are committed. CI creates a temporary Flutter Android project only to obtain Gradle wrapper scripts/JAR, then copies those wrapper files into the TV project; it does not regenerate or overwrite the committed TV Android configuration.
 
 ## Release acceptance checklist
 
