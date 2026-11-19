@@ -13,7 +13,7 @@
 
 ## Current repository inventory (verified 2026-11-19)
 
-The Mobile Build #1378 source tree has **82 tracked files**. The current TV branch has **66 tracked files** after the first parity-port pass.
+The Mobile Build #1378 source tree has **82 tracked files**. The current TV branch has **73 tracked files** after the first parity-port pass.
 
 TV branch currently includes:
 
