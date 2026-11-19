@@ -17,7 +17,6 @@ android {
 
     compileOptions {
         // Required by flutter_local_notifications on Android TV too.
-        coreLibraryDesugaringEnabled true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
         coreLibraryDesugaringEnabled true
