@@ -6580,7 +6580,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 // Poster-only titles now fill the frame instead of shrinking
                 // into a small letterboxed image.
                 const heroImageFit = BoxFit.cover;
-                return GestureDetector(
+                return InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  focusColor: gold.withValues(alpha: 0.22),
                   onTap: _isOpeningTitle ? null : () => _playMovie(movie),
                   child: Stack(
                     fit: StackFit.expand,
@@ -6699,7 +6701,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (genreLabel.isNotEmpty) genreLabel,
             ].join(' | ');
 
-            return GestureDetector(
+            return InkWell(
+              borderRadius: BorderRadius.circular(18),
+              focusColor: gold.withValues(alpha: 0.22),
               key: ValueKey('featured:${movie.mediaType}:${movie.tmdbId > 0 ? movie.tmdbId : movie.id}'),
               onTap: _isOpeningTitle ? null : () => _playMovie(movie),
               child: Container(
@@ -8300,7 +8304,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           itemBuilder: (context, index) {
             final movie = _watchHistory[index];
             final image = movie.backdropUrl.isNotEmpty ? movie.backdropUrl : movie.posterUrl;
-            return GestureDetector(onTap: () => _playMovie(movie), child: SizedBox(width: 148, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            return InkWell(onTap: () => _playMovie(movie), focusColor: gold.withValues(alpha: 0.22), child: SizedBox(width: 148, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               ClipRRect(borderRadius: BorderRadius.circular(8), child: SizedBox(width: 148, height: 78, child: FlixoraCachedImage(imageUrl: image, isOnline: _online))),
               const SizedBox(height: 5),
               Text(movie.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: white, fontSize: 12, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic)),
@@ -18968,7 +18972,9 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
               separatorBuilder: (_, __) => const SizedBox(width: 11),
               itemBuilder: (context, index) {
                 final item = movies[index];
-                return GestureDetector(
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  focusColor: playerGold.withValues(alpha: 0.22),
                   onTap: widget.onMovieSelected == null
                       ? null
                       : () => widget.onMovieSelected!(item),
