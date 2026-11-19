@@ -6916,12 +6916,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ...trending, ...popular, ...latest, ...topRated,
         ].where((movie) => movie.mediaType == 'movie').toList());
       case 'TV Series':
+      case 'TV Shows':
         return _deduplicateMovies([
           ...flixoraMovies.where((title) => title.mediaType == 'tv'),
           ..._regularMovieBoxItems
               .where((title) => title.mediaType == 'tv'),
           ...trendingTv, ...popularTv, ...topRatedTv, ...koreanDrama, ...bengaliTv,
+          ...indianDramaTv,
         ]);
+      case 'Web Series':
+        return _webSeriesTitles();
       case 'Anime':
         return _deduplicateMovies([
           ...flixoraMovies.where(_isAnimeTitle),
@@ -7053,8 +7057,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 'Movies':
         return source.where((movie) => movie.mediaType == 'movie').toList();
       case 'Series':
+      case 'TV Shows':
         return source.where((movie) =>
             movie.mediaType == 'tv' && !_isAnimeTitle(movie)).toList();
+      case 'Web Series':
+        final webSeriesKeys = _webSeriesTitles()
+            .map(_movieBoxMatchKey)
+            .toSet();
+        return source.where((movie) =>
+            movie.mediaType == 'tv' &&
+            webSeriesKeys.contains(_movieBoxMatchKey(movie))).toList();
       case 'Anime':
         return source.where(_isAnimeTitle).toList();
       case 'Drama':
@@ -7071,7 +7083,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   List<String> _availableSearchFilters(List<Movie> source) {
-    const filters = ['All', 'Movies', 'Series', 'Anime', 'Drama', 'Bengali'];
+    const filters = ['All', 'Movies', 'TV Shows', 'Web Series', 'Series', 'Anime', 'Drama', 'Bengali'];
     return filters.where((filter) =>
         filter == 'All' || _filterSearchMovies(source, filter).isNotEmpty
     ).toList();
@@ -7621,7 +7633,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _homeTopCategories() {
     const categories = [
-      'Trending', 'Movies', 'TV Series', 'Anime', 'Drama',
+      'Trending', 'Movies', 'TV Series', 'Web Series', 'TV Shows', 'Anime', 'Drama',
       'Bengali', 'Bengali Movies', 'Korean Drama',
     ];
     final available = categories.where(
@@ -7665,6 +7677,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       'All': 'Trending',
       'All Movies': 'Movies',
       'All Dramas': 'Drama',
+      'Web Series': 'Web Series',
+      'TV Shows': 'TV Shows',
       'Bengali Movies': 'Bengali Movies',
       'Anime': 'Anime',
     };
