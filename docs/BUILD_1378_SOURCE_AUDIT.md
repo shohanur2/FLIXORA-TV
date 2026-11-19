@@ -109,7 +109,8 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 - [x] Identify missing mobile files, dependencies and Android project configuration.
 - [x] Correct README to state the actual source baseline and incomplete status.
 - [x] Pause automatic push builds during the audit.
-- [x] Port the Build #1378 main.dart baseline, dependencies, AniList/external catalogue services, 15 unit tests and FLIXORA logo.\n- [x] Add Android TV manifest, Gradle configuration, launcher icons, launch themes and banner drawable.\n- [ ] Complete source/API mapping for remaining platform-specific behaviors and TV UI.
+- [x] Port the Build #1378 main.dart baseline, dependencies, AniList/external catalogue services, 15 unit tests and FLIXORA logo.
+- [x] Add Android TV manifest, Gradle configuration, launcher icons, launch themes and banner drawable.\n- [ ] Complete source/API mapping for remaining platform-specific behaviors and TV UI.
 - [x] Restore full Build #1378 application, Player and Subtitle source baseline in TV main.dart.\n- [ ] Complete TV-specific integration and verify Player/Subtitle behavior end-to-end.
 - [ ] Complete remote focus and Liquid Glass adaptation across all screens.
 - [ ] Validate CI Flutter project generation against committed Android Gradle/manifest/resources and make the Android build fully reproducible.
