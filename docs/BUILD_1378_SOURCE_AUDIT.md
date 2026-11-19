@@ -45,7 +45,7 @@ These changes are source-level adaptations only. They do not prove device compat
 - Core library desugaring is enabled in the committed Groovy Gradle file for flutter_local_notifications.
 - Firebase Google Services is applied only when optional Firebase client configuration is supplied as an Actions secret.
 - CI no longer regenerates the committed Android project. It creates a temporary Flutter Android project solely to obtain Gradle wrapper scripts/JAR, then copies those wrapper files into the TV project.
-- CI uses Flutter 3.35.7 and Java 17.
+- CI uses Flutter 3.35.7 and Java 17, runs Flutter analyze and the full Dart/widget test suite before APK generation.
 - Automatic push builds remain disabled. The workflow is manual-dispatch only.
 - Build #30 passed Rust, SparkBoxCore, dependency install, analyze, APK build and artifact upload on the old scaffold commit `3b8f183c3862c9305dc7dfd7504bd5c0b0c281c7`. It predates the full Build #1378 port and does not validate the current branch.
 
@@ -89,13 +89,13 @@ These changes are source-level adaptations only. They do not prove device compat
 - [x] Remove CI's fragile generated-project mutation; bootstrap only Gradle wrapper files.
 - [x] Add TV Player and Hot Shorts remote-key handling.
 - [x] Add navigation focus feedback and selected-tab autofocus.
-- [x] Apply Liquid Glass to key Home, policy, navigation and Player surfaces.
+- [x] Apply Liquid Glass to key Home, policy, navigation and Player surfaces.\n- [x] Add a 1920dp content-width cap for ultra-wide displays and a 320x180dp Leanback banner.
 - [x] Update README and this audit to reflect the actual implementation.
 
 ## Not yet verified
 
 - [ ] Current branch clean Flutter dependency resolution.
-- [ ] Current branch `flutter analyze` and all Dart tests.
+- [ ] Current branch `flutter analyze` and all Dart tests (now included in CI before APK build).
 - [ ] Current branch Rust/SparkBoxCore build and APK generation.
 - [ ] Installation, launcher discovery, focus behavior and playback on TV hardware.
 - [ ] Full feature parity and release acceptance.
