@@ -48,7 +48,7 @@ const String authRedirectUrl =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Keep remote-control focus indicators visible on Android TV / Google TV.
-  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.always;
+  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.traditional;
   MediaKit.ensureInitialized();
 
   unawaited(
@@ -82,6 +82,7 @@ const Color premiumGold = Color(0xFFE8C15A);
 const Color white = Color(0xFFFFFFFF);
 const Color ink = Color(0xFFFFFFFF);
 const Color ink70 = Color(0xB3FFFFFF);
+const Color ink75 = Color(0xBFFFFFFF);
 const Color ink60 = Color(0x99FFFFFF);
 const Color ink58 = Color(0x94FFFFFF);
 const Color ink54 = Color(0x8AFFFFFF);
