@@ -142,7 +142,7 @@ class ResumableDownloadService {
     final directory = await getApplicationDocumentsDirectory();
     final safeName = _safeName(fileName);
     final extension = _extension(url);
-    final finalPath = '${directory.path}/$safeName_$uniqueId$extension';
+    final finalPath = '${directory.path}/${safeName}_$uniqueId$extension';
     final partPath = existingPartialPath ?? '$finalPath.part';
     final partFile = File(partPath);
 
