@@ -1798,6 +1798,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _librarySection = 'Downloads';
   bool _showRanking = false;
   bool _searchOpen = false;
+  bool _sidebarExpanded = false;
   String _searchCategory = 'All';
   bool _rankingTv = false;
   String _rankingCategory = 'Cinema';
@@ -10090,33 +10091,138 @@ Entertainment Beyond Boundaries.
     }
   }
 
-  Widget _bottomNavItem(int index, IconData icon, IconData activeIcon, String label) {
-    final selected = _tab == index;
-    return Expanded(
+  Widget _sideNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required bool expanded,
+  }) {
+    final selected = !_searchOpen && _tab == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       child: InkWell(
-        autofocus: selected,
+        autofocus: index == 0 && !_searchOpen,
         focusColor: tvFocusPurple.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        onFocusChange: (focused) {
+          if (focused && !_sidebarExpanded && mounted) {
+            setState(() => _sidebarExpanded = true);
+          }
+        },
         onTap: () {
           FocusScope.of(context).unfocus();
           setState(() {
+            _searchOpen = false;
             _search = '';
             _showRanking = false;
             _searchController.clear();
             _searchLoading = false;
+            _searchError = null;
             _profileSection = null;
             _tab = index;
           });
         },
-        child: SizedBox(
-          height: 56,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 54,
+          padding: EdgeInsets.symmetric(horizontal: expanded ? 15 : 0),
+          decoration: BoxDecoration(
+            color: selected ? gold.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? gold.withValues(alpha: 0.42) : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
-              Icon(selected ? activeIcon : icon, size: 22, color: selected ? gold : ink60),
-              const SizedBox(height: 2),
-              Text(label, style: TextStyle(color: selected ? gold : ink60, fontSize: 11, height: 1.0, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-            ],          ),
+              Icon(selected ? activeIcon : icon, size: 23, color: selected ? gold : ink60),
+              if (expanded) ...[
+                const SizedBox(width: 14),
+                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: selected ? gold : ink75, fontSize: 14,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600))),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tvSidebar() {
+    final expanded = _sidebarExpanded;
+    return Focus(
+      onFocusChange: (focused) {
+        if (!focused && mounted && _sidebarExpanded) {
+          setState(() => _sidebarExpanded = false);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        width: expanded ? 218 : 78,
+        margin: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+        decoration: BoxDecoration(
+          color: const Color(0xE610111A),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: gold.withValues(alpha: 0.22)),
+          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(3, 0))],
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: InkWell(
+                autofocus: _searchOpen,
+                focusColor: tvFocusPurple.withValues(alpha: 0.34),
+                borderRadius: BorderRadius.circular(14),
+                onFocusChange: (focused) {
+                  if (focused && !_sidebarExpanded && mounted) {
+                    setState(() => _sidebarExpanded = true);
+                  }
+                },
+                onTap: _openSearch,
+                child: Container(
+                  height: 54,
+                  padding: EdgeInsets.symmetric(horizontal: expanded ? 15 : 0),
+                  decoration: BoxDecoration(
+                    color: _searchOpen ? gold.withValues(alpha: 0.15) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _searchOpen ? gold.withValues(alpha: 0.42) : Colors.transparent),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_rounded, size: 24, color: _searchOpen ? gold : ink60),
+                      if (expanded) ...[
+                        const SizedBox(width: 14),
+                        Text('Search', style: TextStyle(color: _searchOpen ? gold : ink75,
+                          fontSize: 14, fontWeight: FontWeight.w700)),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Divider(height: 1, color: gold.withValues(alpha: 0.18)),
+            ),
+            _sideNavItem(index: 0, icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home', expanded: expanded),
+            _sideNavItem(index: 1, icon: Icons.history_rounded, activeIcon: Icons.history_rounded, label: 'History', expanded: expanded),
+            _sideNavItem(index: 2, icon: Icons.video_library_outlined, activeIcon: Icons.video_library_rounded, label: 'Library', expanded: expanded),
+            _sideNavItem(index: 3, icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile', expanded: expanded),
+            const Spacer(),
+            if (expanded)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text('FLIXORA', style: TextStyle(color: gold.withValues(alpha: 0.8),
+                  fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              ),
+          ],
         ),
       ),
     );
@@ -10146,14 +10252,16 @@ Entertainment Beyond Boundaries.
           padding: EdgeInsets.zero,
           child: SizedBox.expand(),
         ),
-        systemOverlayStyle: SystemUiOverlayStyle(
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
         ),
-        elevation: 0, scrolledUnderElevation: 0, surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
         centerTitle: _showRanking,
-        toolbarHeight: _showRanking ? kToolbarHeight : (_tab == 0 ? 62 : kToolbarHeight),
+        toolbarHeight: _showRanking ? kToolbarHeight : (_searchOpen ? 62 : (_tab == 0 ? 62 : kToolbarHeight)),
         titleSpacing: _searchOpen ? 0 : (_tab == 0 && !_showRanking ? 8 : 16),
         leadingWidth: _searchOpen ? 48 : null,
         leading: _showRanking
@@ -10174,89 +10282,54 @@ Entertainment Beyond Boundaries.
                       )
                     : null),
         title: _showRanking
-            ? const Text(
-                'Ranking',
-                style: TextStyle(color: white, fontWeight: FontWeight.w700),
-              )
-            : _tab == 0
-                ? (_searchOpen
-                    ? _searchField()
-                    : Row(
+            ? const Text('Ranking', style: TextStyle(color: white, fontWeight: FontWeight.w700))
+            : _searchOpen
+                ? _searchField()
+                : _tab == 0
+                    ? Row(
                         children: [
-                          Image.asset(
-                            'assets/images/flixora_logo.png',
-                            width: 39,
-                            height: 39,
-                            fit: BoxFit.contain,
-                          ),
+                          Image.asset('assets/images/flixora_logo.png',
+                            width: 39, height: 39, fit: BoxFit.contain),
                           const SizedBox(width: 9),
-                          Expanded(child: _searchField()),
+                          const Expanded(child: Text('FLIXORA',
+                            style: TextStyle(color: gold, fontWeight: FontWeight.w900, letterSpacing: 1.4))),
                         ],
-                      ))
-                : Text(
-                    _pageTitle(),
-                    style: const TextStyle(
-                      color: gold,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-        actions: _tab == 0 || _showRanking
+                      )
+                    : Text(
+                        _pageTitle(),
+                        style: const TextStyle(color: gold, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                      ),
+        actions: _tab == 0 || _showRanking || _searchOpen
             ? const []
             : [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Tooltip(
-                    message: _online
-                        ? 'Internet connected'
-                        : 'No internet connection',
-                    child: Icon(
-                      _online ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-                      color: _online ? gold : Colors.redAccent,
-                    ),
+                    message: _online ? 'Internet connected' : 'No internet connection',
+                    child: Icon(_online ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                      color: _online ? gold : Colors.redAccent),
                   ),
                 ),
               ],
       ),
       body: Center(
-        // Keep cinematic content comfortably framed on 4K displays while
-        // allowing full-width layouts on ordinary 720p/1080p televisions.
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1920),
-          child: SizedBox.expand(
-            child: (!_connectionKnown && _allMovies().isEmpty)
-                ? const Center(
-                    child: CircularProgressIndicator(color: gold),
-                  )
-                : (_tab == 0 && !_searchOpen && !_online && _allMovies().isEmpty)
-                    ? NoInternetScreen(onRefresh: _refreshFromOfflineScreen)
-                    : _currentPage(),
-          ),
-        ),
-      ),
-      extendBody: true,
-      bottomNavigationBar: _showRanking ? null : LiquidGlassSurface(
-        radius: 22,
-        blur: 18,
-        tint: const Color(0xE60C0C14),
-        borderColor: gold.withValues(alpha: 0.30),
-        padding: EdgeInsets.zero,
-        child: SafeArea(
-          top: false,
-          maintainBottomViewPadding: true,
-          child: Container(
-            height: 62,
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: ink10, width: 0.5)),
-            ),
-            child: Row(
-              children: [
-                _bottomNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
-                _bottomNavItem(1, Icons.history_rounded, Icons.history, 'History'),
-                _bottomNavItem(2, Icons.video_library_outlined, Icons.video_library, 'Library'),
-                _bottomNavItem(3, Icons.person_outline, Icons.person, 'Profile'),
-              ],
-            ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!_showRanking) _tvSidebar(),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: 8, bottom: _showRanking ? 0 : 8),
+                  child: (!_connectionKnown && _allMovies().isEmpty)
+                      ? const Center(child: CircularProgressIndicator(color: gold))
+                      : (_tab == 0 && !_searchOpen && !_online && _allMovies().isEmpty)
+                          ? NoInternetScreen(onRefresh: _refreshFromOfflineScreen)
+                          : _currentPage(),
+                ),
+              ),
+            ],
           ),
         ),
       ),
