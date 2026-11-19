@@ -10218,13 +10218,22 @@ Entertainment Beyond Boundaries.
                 ),
               ],
       ),
-      body: (!_connectionKnown && _allMovies().isEmpty)
-          ? const Center(
-              child: CircularProgressIndicator(color: gold),
-            )
-          : (_tab == 0 && !_searchOpen && !_online && _allMovies().isEmpty)
-              ? NoInternetScreen(onRefresh: _refreshFromOfflineScreen)
-              : _currentPage(),
+      body: Center(
+        // Keep cinematic content comfortably framed on 4K displays while
+        // allowing full-width layouts on ordinary 720p/1080p televisions.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1920),
+          child: SizedBox.expand(
+            child: (!_connectionKnown && _allMovies().isEmpty)
+                ? const Center(
+                    child: CircularProgressIndicator(color: gold),
+                  )
+                : (_tab == 0 && !_searchOpen && !_online && _allMovies().isEmpty)
+                    ? NoInternetScreen(onRefresh: _refreshFromOfflineScreen)
+                    : _currentPage(),
+          ),
+        ),
+      ),
       extendBody: true,
       bottomNavigationBar: _showRanking ? null : LiquidGlassSurface(
         radius: 22,
