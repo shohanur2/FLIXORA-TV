@@ -23,7 +23,7 @@ TV branch currently includes:
 - Android Kotlin `MainActivity.kt` and `DownloadForegroundService.kt`
 - Rust playback core and SparkBox patch scripts.
 
-The TV `lib/main.dart` has now been replaced with the complete 19,845-line Mobile Build #1378 main application source as the feature baseline. The app has a root focus-traversal group and always-visible focus highlight strategy for TV remotes, but this is only foundational adaptation: every screen, row, selector and Player control still needs deliberate D-pad testing and TV layout work. The TV branch still does not contain a committed Android Gradle project or full launcher resource set.
+The TV `lib/main.dart` has now been replaced with the complete 19,845-line Mobile Build #1378 main application source as the feature baseline. The app has a root focus-traversal group and always-visible focus highlight strategy for TV remotes, but this is only foundational adaptation: every screen, row, selector and Player control still needs deliberate D-pad testing and TV layout work. The TV branch now contains the Android Gradle files, TV-specific manifest, app launcher icon densities, launch theme resources and a Leanback banner drawable. Gradle wrapper bootstrap is still generated in CI; Firebase configuration remains an optional Actions secret and must be configured to enable push notifications.
 
 ## Build #1378 source inventory and gaps
 
@@ -112,7 +112,7 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 - [ ] Complete source/API mapping and port the remaining missing assets, platform config and any required shared modules.
 - [ ] Integrate full Build #1378 application, Player and Subtitle behavior into TV.
 - [ ] Complete remote focus and Liquid Glass adaptation across all screens.
-- [ ] Commit and validate a reproducible Android TV project.
+- [ ] Validate CI Flutter project generation against committed Android Gradle/manifest/resources and make the Android build fully reproducible.
 - [ ] Run analyzer/tests and one controlled build after review.
 - [ ] Verify all acceptance flows on Android TV and Google TV devices.
 
