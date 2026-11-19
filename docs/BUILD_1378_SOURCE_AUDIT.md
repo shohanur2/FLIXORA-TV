@@ -23,7 +23,7 @@ TV branch currently includes:
 - Android Kotlin `MainActivity.kt` and `DownloadForegroundService.kt`
 - Rust playback core and SparkBox patch scripts.
 
-The TV `lib/main.dart` has now been replaced with the complete 19,845-line Mobile Build #1378 main application source as the feature baseline. The app has a root focus-traversal group and always-visible focus highlight strategy for TV remotes, but this is only foundational adaptation: every screen, row, selector and Player control still needs deliberate D-pad testing and TV layout work. The TV branch now contains the Android Gradle files, TV-specific manifest, app launcher icon densities, launch theme resources and a Leanback banner drawable. Gradle wrapper bootstrap is still generated in CI; Firebase configuration remains an optional Actions secret and must be configured to enable push notifications.
+The TV `lib/main.dart` contains the complete Mobile Build #1378 application source as the feature baseline (now 19,966 lines after TV-only adaptations). TV additions include always-visible focus highlights, root focus traversal, selected bottom-navigation autofocus, purple focus feedback, media/D-pad handling for the Player and D-pad page/play controls for Hot Shorts. Liquid Glass is applied to Home and policy headers, bottom navigation and Player control bars. These are meaningful adaptations, not proof of full device compatibility. The TV branch contains committed Gradle files, TV-specific manifest, launcher icon densities, dark launch themes and a Leanback banner. CI now bootstraps only Gradle wrapper scripts/JAR from a temporary Flutter project and does not regenerate the committed Android project. Firebase configuration remains optional via an Actions secret.
 
 ## Build #1378 source inventory and gaps
 
@@ -33,7 +33,7 @@ The TV `lib/main.dart` has now been replaced with the complete 19,845-line Mobil
 - TV source: `lib/main.dart` is restored from the exact Build #1378 source as the full feature baseline; TV-specific adaptation remains in progress.
 - Mobile `main.dart` contains substantial catalogue, navigation, settings, Player and Subtitle integration. A file-level copy without dependency and TV focus adaptation is not sufficient.
 
-### Mobile source modules missing from TV at audit time
+### Mobile files intentionally excluded or already ported
 
 - `lib/streaming/anilist_service.dart`
 - `lib/streaming/external_catalog_service.dart`
@@ -67,7 +67,7 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 ## Android and CI findings
 
 1. The TV branch now contains committed Groovy Gradle configuration, a TV-specific manifest, landscape orientation, Leanback launcher category, optional touchscreen, launcher icon densities, launch themes and a Leanback banner drawable.
-2. CI still runs `flutter create` to bootstrap generated wrapper/platform metadata. Its interaction with committed Android files must be verified before the next build; do not assume every custom file is preserved.
+2. CI creates a temporary Flutter Android project solely to obtain Gradle wrapper scripts/JAR, then copies those wrapper files into the TV project. It no longer regenerates the committed TV Android files.
 3. Core library desugaring is enabled in the committed app Gradle file. Firebase Google Services is applied only when the optional `FIREBASE_GOOGLE_SERVICES_JSON_BASE64` Actions secret supplies a client configuration. No Firebase config file or private credential is committed.
 4. The mobile manifest's PiP, download service, auth callback and notification capabilities are retained where applicable, but PiP/background service behavior still needs TV device verification.
 5. Build #30 completed successfully on the pre-port commit `3b8f183c3862c9305dc7dfd7504bd5c0b0c281c7`. Rust, SparkBoxCore, dependency install, analyze, APK build and artifact upload all passed for the old TMDB scaffold. It does **not** validate the current full Build #1378 baseline or the newly committed Android configuration.
@@ -78,15 +78,15 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 | Area | Current evidence | Status |
 |---|---|---|
 | Home/catalogue | Full Build #1378 main.dart baseline restored; TV layout/focus still unverified | Partial |
-| Admin/Supabase catalogue merge | Supabase initialization exists; merge not integrated in TV UI | Incomplete |
-| MovieBox / WeFeed | Some shared services and native build scripts are present; TV UI integration unverified | Incomplete |
-| Player | Full mobile Player is not integrated into TV main.dart | Incomplete |
-| Audio / quality / buffering / seeking / resume | Mobile source has implementations; TV end-to-end integration not verified | Incomplete |
-| Subtitles | Extensive logic is embedded in mobile main.dart; full implementation not ported to TV main.dart | Incomplete |
-| Download/background download | Service and Android service files are present; TV runtime test absent | Incomplete |
+| Admin/Supabase catalogue merge | Build #1378 Supabase catalogue/visibility logic is present in main.dart; live shared-backend verification pending | Partial |
+| MovieBox / WeFeed | Build #1378 UI/source integration plus MovieBox/Rust services and SparkBoxCore build are present; live API/TV verification pending | Partial |
+| Player | Full Build #1378 Player code is present; TV media-key/D-pad adaptation added; device testing pending | Partial |
+| Audio / quality / buffering / seeking / resume | Build #1378 implementations present; remote and TV runtime behavior not verified | Partial |
+| Subtitles | Full Build #1378 subtitle source is present in main.dart; language selection, import, lookup and rendering need TV runtime verification | Partial |
+| Download/background download | Build #1378 UI/source, resumable service and Android foreground service present; TV runtime test pending | Partial |
 | PiP/Mini Player | Mobile PiP service copied; Android TV support and integration unverified | Incomplete |
-| Liquid Glass | Reusable surface exists; app-wide conversion still outstanding | Partial |
-| D-pad/remote | Root focus traversal/highlight enabled; screen-by-screen directional behavior unverified | Incomplete |
+| Liquid Glass | Home/policy headers, navigation and Player bars use Liquid Glass; remaining screens and performance tuning pending | Partial |
+| D-pad/remote | Root traversal, Home nav autofocus, Player keys and Hot Shorts controls added; remaining menus/dialogs/shelves need device validation | Partial |
 | Android TV launcher | Committed Leanback manifest, landscape, icon densities and banner drawable | Partial |
 | Device testing | No verified Android TV / Google TV device acceptance report | Not done |
 
