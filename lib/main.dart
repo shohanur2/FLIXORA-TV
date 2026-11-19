@@ -10093,7 +10093,15 @@ Entertainment Beyond Boundaries.
     return Scaffold(
       extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: bg,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: const LiquidGlassSurface(
+          radius: 0,
+          blur: 18,
+          tint: Color(0xE60B0C14),
+          borderColor: Color(0x332F2A4A),
+          padding: EdgeInsets.zero,
+          child: SizedBox.expand(),
+        ),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
