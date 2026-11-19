@@ -1,4 +1,4 @@
-/// Shared helpers for FLIXORA's real video-quality selection.
+// Shared helpers for FLIXORA's real video-quality selection.
 import 'native/rust_playback_core.dart';
 ///
 /// A quality label is a requested/declared encode. It does not prove the
