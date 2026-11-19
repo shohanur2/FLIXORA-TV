@@ -13,7 +13,7 @@
 
 ## Current repository inventory (verified 2026-11-19)
 
-The Mobile Build #1378 source tree has **82 tracked files**. The current TV branch has **32 tracked files** after the audit/CI and documentation updates.
+The Mobile Build #1378 source tree has **82 tracked files**. The current TV branch has **66 tracked files** after the first parity-port pass.
 
 TV branch currently includes:
 
@@ -66,12 +66,12 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 
 ## Android and CI findings
 
-1. TV currently creates Android project files at build time using `flutter create`; this means important Gradle, manifest and resource configuration is not versioned in the TV repository.
-2. The workflow currently applies desugaring and Leanback/landscape changes with Python text edits to generated Gradle/manifest files. This is brittle compared with a committed, reviewed Android project.
-3. The mobile reference has a Groovy `android/app/build.gradle`, `settings.gradle`, root `build.gradle`, Gradle wrapper, launcher resources and Firebase configuration. TV must use a deliberately reviewed TV-specific Android project, not blindly copy mobile Firebase or launcher settings.
-4. The mobile manifest includes PiP, download service, auth callback and notification permissions. Each must be evaluated for TV support and preserved where applicable.
-5. Rust core compilation succeeded in Build #30; SparkBoxCore build was still running at the last status check. This does not verify Flutter analysis, APK generation or runtime behavior.
-6. Automatic push builds have been paused during the audit. The workflow now uses manual dispatch only, preventing every documentation/source update from triggering another unreviewed build.
+1. The TV branch now contains committed Groovy Gradle configuration, a TV-specific manifest, landscape orientation, Leanback launcher category, optional touchscreen, launcher icon densities, launch themes and a Leanback banner drawable.
+2. CI still runs `flutter create` to bootstrap generated wrapper/platform metadata. Its interaction with committed Android files must be verified before the next build; do not assume every custom file is preserved.
+3. Core library desugaring is enabled in the committed app Gradle file. Firebase Google Services is applied only when the optional `FIREBASE_GOOGLE_SERVICES_JSON_BASE64` Actions secret supplies a client configuration. No Firebase config file or private credential is committed.
+4. The mobile manifest's PiP, download service, auth callback and notification capabilities are retained where applicable, but PiP/background service behavior still needs TV device verification.
+5. Build #30 completed successfully on the pre-port commit `3b8f183c3862c9305dc7dfd7504bd5c0b0c281c7`. Rust, SparkBoxCore, dependency install, analyze, APK build and artifact upload all passed for the old TMDB scaffold. It does **not** validate the current full Build #1378 baseline or the newly committed Android configuration.
+6. Automatic push builds are paused; the workflow now uses manual dispatch only.
 
 ## Feature parity audit
 
@@ -95,7 +95,7 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 1. Freeze the Mobile Build #1378 reference and maintain the TV-only repository boundary.
 2. Finish source/dependency/API mapping before copying the main application wholesale.
 3. Port missing shared modules, assets and tests where relevant; preserve the existing backend and Admin Panel.
-4. Replace CI-generated Android project configuration with a committed, reproducible Android TV project and validated manifest/resources.
+4. Validate CI Flutter project generation against the committed Android TV Gradle/manifest/resources and make the Android build reproducible.
 5. Integrate the full mobile app behavior into TV navigation and large-screen layouts; add complete remote focus and key handling.
 6. Integrate and verify MovieBox/WeFeed, Player, Audio, Subtitle, Resume, Download, Library, Archive and other supported capabilities.
 7. Apply Liquid Glass consistently without degrading TV rendering performance or focus visibility.
@@ -109,8 +109,8 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 - [x] Identify missing mobile files, dependencies and Android project configuration.
 - [x] Correct README to state the actual source baseline and incomplete status.
 - [x] Pause automatic push builds during the audit.
-- [ ] Complete source/API mapping and port the remaining missing assets, platform config and any required shared modules.
-- [ ] Integrate full Build #1378 application, Player and Subtitle behavior into TV.
+- [x] Port the Build #1378 main.dart baseline, dependencies, AniList/external catalogue services, 15 unit tests and FLIXORA logo.\n- [x] Add Android TV manifest, Gradle configuration, launcher icons, launch themes and banner drawable.\n- [ ] Complete source/API mapping for remaining platform-specific behaviors and TV UI.
+- [x] Restore full Build #1378 application, Player and Subtitle source baseline in TV main.dart.\n- [ ] Complete TV-specific integration and verify Player/Subtitle behavior end-to-end.
 - [ ] Complete remote focus and Liquid Glass adaptation across all screens.
 - [ ] Validate CI Flutter project generation against committed Android Gradle/manifest/resources and make the Android build fully reproducible.
 - [ ] Run analyzer/tests and one controlled build after review.
