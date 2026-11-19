@@ -46,6 +46,8 @@ const String authRedirectUrl =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Keep remote-control focus indicators visible on Android TV / Google TV.
+  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.always;
   MediaKit.ensureInitialized();
 
   unawaited(
@@ -1671,20 +1673,24 @@ class FlixoraApp extends StatelessWidget {
       ),
       home: const HomeScreen(),
       builder: (context, child) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            child ?? const SizedBox.shrink(),
-            ValueListenableBuilder<_MoviePlayerScreenState?>(
-              valueListenable: _activeMiniPlayerState,
-              builder: (context, player, _) {
-                if (player == null || !player.mounted || !player._isMiniPlayer) {
-                  return const SizedBox.shrink();
-                }
-                return player._buildMiniPlayerOverlay(context);
-              },
-            ),
-          ],
+        // Give TV remotes a consistent directional focus traversal root.
+        return FocusTraversalGroup(
+          policy: ReadingOrderTraversalPolicy(),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              child ?? const SizedBox.shrink(),
+              ValueListenableBuilder<_MoviePlayerScreenState?>(
+                valueListenable: _activeMiniPlayerState,
+                builder: (context, player, _) {
+                  if (player == null || !player.mounted || !player._isMiniPlayer) {
+                    return const SizedBox.shrink();
+                  }
+                  return player._buildMiniPlayerOverlay(context);
+                },
+              ),
+            ],
+          ),
         );
       },
     );
