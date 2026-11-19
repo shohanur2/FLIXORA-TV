@@ -48,7 +48,7 @@ const String authRedirectUrl =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Keep remote-control focus indicators visible on Android TV / Google TV.
-  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.traditional;
+  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
   MediaKit.ensureInitialized();
 
   unawaited(
