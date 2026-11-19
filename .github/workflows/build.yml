@@ -15,6 +15,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+
       - name: Generate Android platform project
         run: flutter create --platforms=android --org com.flixora --project-name flixora_tv .
 
@@ -67,13 +74,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.35.7'
-          channel: stable
-          cache: true
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
