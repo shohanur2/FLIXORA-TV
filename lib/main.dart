@@ -26,8 +26,6 @@ import 'streaming/featured_carousel_layout.dart';
 import 'streaming/hero_slider_mixer.dart';
 import 'streaming/catalog_source_policy.dart';
 import 'streaming/tmdb_media_type.dart';
-import 'archive_service.dart';
-import 'archive_screen.dart';
 import 'downloads/resumable_download_service.dart';
 import 'native/rust_playback_core.dart';
 import 'streaming/moviebox_service.dart';
@@ -5334,33 +5332,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (requested.isFlixora) return null;
     if (requested.hasPlayableVideoUrl) return requested;
     return null;
-  }
-
-  int _archiveMovieId(String identifier) {
-    var value = 0;
-    for (final unit in identifier.codeUnits) {
-      value = ((value * 31) + unit) & 0x7fffffff;
-    }
-    return value == 0 ? 1 : value;
-  }
-
-  void _openArchiveMovie(ArchiveMovie archiveMovie) {
-    final videoUrl = archiveMovie.videoUrl?.trim() ?? '';
-    if (videoUrl.isEmpty) return;
-    final movie = Movie(
-      id: _archiveMovieId(archiveMovie.identifier),
-      source: 'archive',
-      title: archiveMovie.title,
-      year: archiveMovie.year,
-      overview: archiveMovie.description,
-      poster: '',
-      backdrop: '',
-      rating: 0,
-      releaseDate: archiveMovie.year,
-      videoUrl: videoUrl,
-      mediaType: 'movie',
-    );
-    unawaited(_openMovie(movie));
   }
 
   Future<bool> _refreshFromOfflineScreen() async {
