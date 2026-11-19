@@ -105,7 +105,7 @@ class ResumableDownloadService {
     required int uniqueId,
   }) async {
     final directory = await getApplicationDocumentsDirectory();
-    return '${directory.path}/${_safeName(fileName)}_${uniqueId}${_extension(url)}.part';
+    return '${directory.path}/${_safeName(fileName)}_$uniqueId${_extension(url)}.part';
   }
 
   static Future<void> download({
@@ -142,8 +142,8 @@ class ResumableDownloadService {
     final directory = await getApplicationDocumentsDirectory();
     final safeName = _safeName(fileName);
     final extension = _extension(url);
-    final finalPath = '${directory.path}/${safeName}_${uniqueId}${extension}';
-    final partPath = existingPartialPath ?? '${finalPath}.part';
+    final finalPath = '${directory.path}/$safeName_$uniqueId$extension';
+    final partPath = existingPartialPath ?? '$finalPath.part';
     final partFile = File(partPath);
 
     var offset = 0;
@@ -180,7 +180,7 @@ class ResumableDownloadService {
           headers: <String, String>{
             ...headers,
             'Accept-Encoding': 'identity',
-            if (offset > 0) 'Range': 'bytes=${offset}-',
+            if (offset > 0) 'Range': 'bytes=$offset-',
           },
           validateStatus: (status) =>
               status != null && status >= 200 && status < 300,
@@ -284,7 +284,7 @@ class ResumableDownloadService {
   static Future<int> _existingLength(String path) async {
     try {
       final file = File(path);
-      return await file.exists() ? file.length() : 0;
+      return await file.exists() ? await file.length() : 0;
     } catch (_) {
       return 0;
     }
