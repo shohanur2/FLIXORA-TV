@@ -7935,6 +7935,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  List<Movie> _moviesAndSeriesCatalogue() {
+    // Use the existing, playable catalogue models for both film and episodic
+    // content. Keep TV dramas and anime included as series, not just titles
+    // explicitly tagged "Web Series".
+    return _deduplicateMovies([
+      ..._allMovies(),
+      ..._tmdbTrendingTv,
+      ..._chineseTrendingTv,
+      ..._koreanTrendingMovies,
+    ]).where((movie) =>
+        movie.mediaType == 'movie' || movie.mediaType == 'tv'
+    ).toList(growable: false);
+  }
+
   Widget _collectionContent(String title, List<Movie> movies) {
     if (movies.isEmpty) {
       return Center(
@@ -10100,7 +10114,7 @@ Entertainment Beyond Boundaries.
             ? _profileContent()
             : _profileSectionContent();
       case 4:
-        return ArchiveScreen(onMovieSelected: _openArchiveMovie);
+        return _collectionContent('Movies & Series', _moviesAndSeriesCatalogue());
       default:
         return _homeContent();
     }
@@ -10342,7 +10356,7 @@ Entertainment Beyond Boundaries.
               child: Divider(height: 1, color: gold.withValues(alpha: 0.18)),
             ),
             _sideNavItem(index: 0, icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home', expanded: expanded),
-            _sideNavItem(index: 4, icon: Icons.movie_outlined, activeIcon: Icons.movie_rounded, label: 'Free Movies', expanded: expanded),
+            _sideNavItem(index: 4, icon: Icons.movie_outlined, activeIcon: Icons.movie_rounded, label: 'Movies & Series', expanded: expanded),
             _sideNavItem(index: 1, icon: Icons.history_rounded, activeIcon: Icons.history_rounded, label: 'History', expanded: expanded),
             _sideNavItem(index: 2, icon: Icons.video_library_outlined, activeIcon: Icons.video_library_rounded, label: 'Library', expanded: expanded),
             const Spacer(),
@@ -10359,7 +10373,7 @@ Entertainment Beyond Boundaries.
     if (_tab == 1) return 'Watch History';
     if (_tab == 2) return 'Library';
     if (_tab == 3) return _profileSection ?? 'CineProfile';
-    if (_tab == 4) return 'Free Movies';
+    if (_tab == 4) return 'Movies & Series';
     return 'FLIXORA';
   }
 
