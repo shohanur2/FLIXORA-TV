@@ -10327,7 +10327,7 @@ Entertainment Beyond Boundaries.
               child: Divider(height: 1, color: gold.withValues(alpha: 0.18)),
             ),
             _sideNavItem(index: 0, icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home', expanded: expanded),
-            _sideNavItem(index: 4, icon: Icons.movie_outlined, activeIcon: Icons.movie_rounded, label: 'Movies / Series', expanded: expanded),
+            _sideNavItem(index: 4, icon: Icons.movie_outlined, activeIcon: Icons.movie_rounded, label: 'Free Movies', expanded: expanded),
             _sideNavItem(index: 1, icon: Icons.history_rounded, activeIcon: Icons.history_rounded, label: 'History', expanded: expanded),
             _sideNavItem(index: 2, icon: Icons.video_library_outlined, activeIcon: Icons.video_library_rounded, label: 'Library', expanded: expanded),
             const Spacer(),
