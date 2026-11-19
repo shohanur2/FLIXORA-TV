@@ -1652,6 +1652,14 @@ class FlixoraApp extends StatelessWidget {
           secondary: premiumGold,
           surface: panel,
         ),
+        focusColor: gold.withValues(alpha: 0.24),
+        hoverColor: gold.withValues(alpha: 0.12),
+        splashColor: gold.withValues(alpha: 0.16),
+        cardTheme: const CardThemeData(
+          color: panel,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+        ),
         appBarTheme: const AppBarTheme(
           backgroundColor: bg,
           foregroundColor: white,
