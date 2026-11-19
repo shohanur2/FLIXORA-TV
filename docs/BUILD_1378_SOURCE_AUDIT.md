@@ -1,120 +1,103 @@
 # FLIXORA TV — Mobile Build #1378 Port Audit
 
-## Authority and safety boundary
+## Source of truth and repository boundaries
 
-- Mobile reference repository: `shohanur2/FLIXORA-BOX`
-- Immutable reference revision: `a3a167b4c74bbb141a29a80c58c97f0f8f2fe386`
-- Reference branch: `fix/fast-first-playback-background-enrichment`
-- Reference build: **Mobile Build #1378**
-- TV working branch: `feature/build-1378-tv-port`
-- The mobile repository is read-only. All TV changes stay in this repository.
-- Reuse the existing FLIXORA Supabase project and FLIXORA-ADMIN; do not recreate or modify their schema.
-- Do not remove features to make the TV build easier. Adapt input, focus, layout and platform APIs while retaining the behavior.
+- Mobile reference: `shohanur2/FLIXORA-BOX`
+- Immutable reference commit: `a3a167b4c74bbb141a29a80c58c97f0f8f2fe386`
+- Reference: Mobile Build #1378
+- TV repository: `shohanur2/FLIXORA-TV`
+- Working branch: `feature/build-1378-tv-port`
+- All changes stay in FLIXORA-TV. FLIXORA-BOX remains read-only.
+- Reuse the existing Supabase project and FLIXORA-ADMIN. Do not recreate or change their schema or deploy Edge Functions as part of this client port.
+- Preserve all Build #1378 features. TV-specific changes are limited to layout, focus, remote input and platform integration.
 
-## Current repository inventory (verified 2026-11-19)
+## Verified source inventory
 
-The Mobile Build #1378 source tree has **82 tracked files**. The current TV branch has **73 tracked files** after the first parity-port pass.
+At the first parity-port audit, Mobile Build #1378 had 82 tracked files and TV had 73 tracked files. The mobile tree contains several items deliberately not copied to the TV client:
+- Supabase Edge Functions and their deploy workflow: backend remains shared and unchanged.
+- `google-services.json`: private Firebase client configuration is not committed; CI can receive it through the optional `FIREBASE_GOOGLE_SERVICES_JSON_BASE64` Actions secret.
+- Mobile release/deploy workflows and the launcher-icon generator input; TV has its own Android launcher icon density resources.
+- Empty placeholder files and mobile-only platform resources.
 
-TV branch currently includes:
+Ported to TV:
+- Full `lib/main.dart` from the immutable Build #1378 reference (19,845 lines at source revision; 19,966 lines after TV adaptations).
+- Required Dart dependencies from Build #1378.
+- MovieBox/Rust/streaming, archive, download, PiP, notification and catalogue visibility modules.
+- AniList and external catalogue services.
+- 15 Dart unit-test files.
+- FLIXORA logo, launcher icon densities, Android TV manifest, dark launch themes, Leanback banner, Gradle configuration and Kotlin platform files.
 
-- `.github/workflows/build.yml`, `README.md`, `docs/BUILD_1378_SOURCE_AUDIT.md`
-- `lib/main.dart` and the currently ported Dart modules under `lib/archive*`, `lib/downloads`, `lib/native`, `lib/player`, `lib/services`, `lib/streaming`, `lib/video_quality_service.dart`, `lib/widgets/liquid_glass_surface.dart`
-- `pubspec.yaml`
-- Android Kotlin `MainActivity.kt` and `DownloadForegroundService.kt`
-- Rust playback core and SparkBox patch scripts.
+## Current TV adaptations
 
-The TV `lib/main.dart` contains the complete Mobile Build #1378 application source as the feature baseline (now 19,966 lines after TV-only adaptations). TV additions include always-visible focus highlights, root focus traversal, selected bottom-navigation autofocus, purple focus feedback, media/D-pad handling for the Player and D-pad page/play controls for Hot Shorts. Liquid Glass is applied to Home and policy headers, bottom navigation and Player control bars. These are meaningful adaptations, not proof of full device compatibility. The TV branch contains committed Gradle files, TV-specific manifest, launcher icon densities, dark launch themes and a Leanback banner. CI now bootstraps only Gradle wrapper scripts/JAR from a temporary Flutter project and does not regenerate the committed Android project. Firebase configuration remains optional via an Actions secret.
+- Android TV / Google TV Leanback launcher category, required Leanback feature, optional touchscreen, landscape orientation and banner drawable.
+- Root focus traversal and always-visible focus highlight strategy.
+- Purple remote-focus feedback, focusable controls and autofocus on the selected bottom-navigation item.
+- Player: media Play/Pause, media Rewind/Fast Forward; D-pad left/right seek when playback overlay is hidden; OK/Select shows the controls. When the overlay is visible, arrows remain available for focus traversal.
+- Hot Shorts: D-pad up/down changes short; OK/Select toggles controls; media Play/Pause keys operate playback.
+- Liquid Glass: Home and policy headers, bottom navigation and Player control bars. Remaining screens still need consistent styling and performance review.
+- Android launch splash uses a dark FLIXORA background and launcher icon.
 
-## Build #1378 source inventory and gaps
+These changes are source-level adaptations only. They do not prove device compatibility or feature parity until tested on actual Android TV / Google TV hardware.
 
-### Main application and UI
+## Android build and CI
 
-- Mobile source: `lib/main.dart` (19,845 lines at the reference revision)
-- TV source: `lib/main.dart` is restored from the exact Build #1378 source as the full feature baseline; TV-specific adaptation remains in progress.
-- Mobile `main.dart` contains substantial catalogue, navigation, settings, Player and Subtitle integration. A file-level copy without dependency and TV focus adaptation is not sufficient.
+- Committed Android project files: Gradle build/settings, TV manifest, launcher resources, launch themes, Kotlin MainActivity and download foreground service.
+- Core library desugaring is enabled in the committed Groovy Gradle file for flutter_local_notifications.
+- Firebase Google Services is applied only when optional Firebase client configuration is supplied as an Actions secret.
+- CI no longer regenerates the committed Android project. It creates a temporary Flutter Android project solely to obtain Gradle wrapper scripts/JAR, then copies those wrapper files into the TV project.
+- CI uses Flutter 3.35.7 and Java 17.
+- Automatic push builds remain disabled. The workflow is manual-dispatch only.
+- Build #30 passed Rust, SparkBoxCore, dependency install, analyze, APK build and artifact upload on the old scaffold commit `3b8f183c3862c9305dc7dfd7504bd5c0b0c281c7`. It predates the full Build #1378 port and does not validate the current branch.
 
-### Mobile files intentionally excluded or already ported
-
-- `lib/streaming/anilist_service.dart`
-- `lib/streaming/external_catalog_service.dart`
-- Mobile Android Gradle project files and wrapper configuration
-- Mobile launcher icon resources and image assets
-- (Ported during this audit) 15 Dart unit-test files
-- Supabase Edge Function source files in the mobile repository (the existing backend remains authoritative; do not redeploy or change it as part of this client port).
-
-### Shared modules already present in TV
-
-- MovieBox / streaming: `moviebox_service.dart`, `moviebox_stream_policy.dart`, `provider_catalog.dart`, `provider_embed_player.dart`, `streaming_source.dart`, `catalog_source_policy.dart`, `featured_carousel_layout.dart`, `hero_slider_mixer.dart`, `tmdb_media_type.dart`, `trending_movie_eligibility.dart`
-- Player/native: `sparkbox_core.dart`, `rust_playback_core.dart`, `playback_error_policy.dart`, `picture_in_picture_service.dart`
-- Downloads/platform: `resumable_download_service.dart`, `DownloadForegroundService.kt`, `MainActivity.kt`
-- Other: `archive_screen.dart`, `archive_service.dart`, `notification_service.dart`, `catalog_visibility_service.dart`, `video_quality_service.dart`
-- Rust: `rust/flixora_core/Cargo.toml`, `rust/flixora_core/src/lib.rs`
-- Build patch scripts: `scripts/patch_sparkbox_fast_stream.py`, `scripts/patch_sparkbox_short_tv.py`
-
-## Dependency comparison
-
-Mobile Build #1378 dependencies include (among others):
-
-- `google_fonts`, `screen_brightness`, `http`, `dio`, `file_picker`
-- `shared_preferences`, `path_provider`, `connectivity_plus`, `app_settings`
-- `cached_network_image`, `flutter_cache_manager`, `share_plus`
-- `supabase_flutter`, `firebase_core`, `firebase_messaging`, `flutter_local_notifications`
-- `media_kit`, `media_kit_video`, `media_kit_libs_video`, `video_player`
-- `webview_flutter`, `webview_flutter_android`
-
-The TV pubspec has been aligned with the Mobile Build #1378 dependency set, including file_picker, connectivity_plus, app_settings, google_fonts, flutter_cache_manager, share_plus, screen_brightness and video_player. Android TV runtime compatibility of each plugin still needs verification; dependency presence is not proof of a working TV interaction. The FLIXORA logo asset has also been copied and registered.
-
-## Android and CI findings
-
-1. The TV branch now contains committed Groovy Gradle configuration, a TV-specific manifest, landscape orientation, Leanback launcher category, optional touchscreen, launcher icon densities, launch themes and a Leanback banner drawable.
-2. CI creates a temporary Flutter Android project solely to obtain Gradle wrapper scripts/JAR, then copies those wrapper files into the TV project. It no longer regenerates the committed TV Android files.
-3. Core library desugaring is enabled in the committed app Gradle file. Firebase Google Services is applied only when the optional `FIREBASE_GOOGLE_SERVICES_JSON_BASE64` Actions secret supplies a client configuration. No Firebase config file or private credential is committed.
-4. The mobile manifest's PiP, download service, auth callback and notification capabilities are retained where applicable, but PiP/background service behavior still needs TV device verification.
-5. Build #30 completed successfully on the pre-port commit `3b8f183c3862c9305dc7dfd7504bd5c0b0c281c7`. Rust, SparkBoxCore, dependency install, analyze, APK build and artifact upload all passed for the old TMDB scaffold. It does **not** validate the current full Build #1378 baseline or the newly committed Android configuration.
-6. Automatic push builds are paused; the workflow now uses manual dispatch only.
-
-## Feature parity audit
+## Feature parity status
 
 | Area | Current evidence | Status |
 |---|---|---|
-| Home/catalogue | Full Build #1378 main.dart baseline restored; TV layout/focus still unverified | Partial |
-| Admin/Supabase catalogue merge | Build #1378 Supabase catalogue/visibility logic is present in main.dart; live shared-backend verification pending | Partial |
-| MovieBox / WeFeed | Build #1378 UI/source integration plus MovieBox/Rust services and SparkBoxCore build are present; live API/TV verification pending | Partial |
-| Player | Full Build #1378 Player code is present; TV media-key/D-pad adaptation added; device testing pending | Partial |
-| Audio / quality / buffering / seeking / resume | Build #1378 implementations present; remote and TV runtime behavior not verified | Partial |
-| Subtitles | Full Build #1378 subtitle source is present in main.dart; language selection, import, lookup and rendering need TV runtime verification | Partial |
-| Download/background download | Build #1378 UI/source, resumable service and Android foreground service present; TV runtime test pending | Partial |
-| PiP/Mini Player | Mobile PiP service copied; Android TV support and integration unverified | Incomplete |
-| Liquid Glass | Home/policy headers, navigation and Player bars use Liquid Glass; remaining screens and performance tuning pending | Partial |
-| D-pad/remote | Root traversal, Home nav autofocus, Player keys and Hot Shorts controls added; remaining menus/dialogs/shelves need device validation | Partial |
-| Android TV launcher | Committed Leanback manifest, landscape, icon densities and banner drawable | Partial |
-| Device testing | No verified Android TV / Google TV device acceptance report | Not done |
+| Home/catalogue | Full Build #1378 source; TV layout and focus still need device checks | Partial |
+| Admin/Supabase | Build #1378 catalogue and visibility code present; live shared-backend verification pending | Partial |
+| MovieBox / WeFeed | Build #1378 UI/source, MovieBox/Rust services and SparkBoxCore build steps present; live API verification pending | Partial |
+| Player | Full Build #1378 Player source plus TV media/D-pad key handling; device testing pending | Partial |
+| Audio / quality / buffering / seeking / resume | Build #1378 implementations present; TV runtime behavior unverified | Partial |
+| Subtitles | Full Build #1378 subtitle source present; language selection, import, lookup and rendering need TV verification | Partial |
+| Download/background download | UI/source, resumable service and Android foreground service present; runtime test pending | Partial |
+| PiP/Mini Player | Source/service and Android activity support present; TV OS support and lifecycle unverified | Partial |
+| Hot Shorts | Source present; D-pad page/play controls added; device testing pending | Partial |
+| Liquid Glass | Home/policy headers, navigation and Player bars styled; other screens/performance tuning pending | Partial |
+| D-pad/remote | Home focus, Player keys and Hot Shorts controls added; all remaining menus/dialogs/shelves require testing | Partial |
+| Launcher | Leanback manifest, landscape, icons and banner committed | Partial |
+| Device testing | No verified TV device acceptance report yet | Not tested |
 
-## Required implementation order
+## Remaining work — in order
 
-1. Freeze the Mobile Build #1378 reference and maintain the TV-only repository boundary.
-2. Finish source/dependency/API mapping before copying the main application wholesale.
-3. Port missing shared modules, assets and tests where relevant; preserve the existing backend and Admin Panel.
-4. Validate CI Flutter project generation against the committed Android TV Gradle/manifest/resources and make the Android build reproducible.
-5. Integrate the full mobile app behavior into TV navigation and large-screen layouts; add complete remote focus and key handling.
-6. Integrate and verify MovieBox/WeFeed, Player, Audio, Subtitle, Resume, Download, Library, Archive and other supported capabilities.
-7. Apply Liquid Glass consistently without degrading TV rendering performance or focus visibility.
-8. Run static analysis and tests, then one controlled build; validate APK installation and feature flows on Android TV/Google TV before considering merge.
+1. Validate clean dependency resolution, Flutter analyze and all 15 tests.
+2. Verify committed Gradle/manifest/resources and complete one controlled CI build after source review.
+3. Audit every screen, card shelf, selector, dialog, settings panel and player action for D-pad focus, Back/OK and predictable focus return.
+4. Complete large-screen layout and scaling for common 720p/1080p/4K TV resolutions.
+5. Apply Liquid Glass consistently while profiling blur/render performance on lower-powered TV boxes.
+6. Verify Supabase Admin-published precedence and catalogue visibility against the existing live backend.
+7. Verify MovieBox/WeFeed discovery, detail, season/episode selection, stream resolution and playback.
+8. Verify audio, quality, buffering, seek, resume, subtitle language selection, external/manual subtitle import, lookup, download, style and delay.
+9. Verify download/background download, PiP/Mini Player, notifications and plugin compatibility on target TV OS versions.
+10. Install and test on at least one Android TV / Google TV device and one Android TV box before considering release or merge.
 
-## Current status
+## Completed in this audit pass
 
-- [x] Identify immutable Mobile Build #1378 reference.
-- [x] Isolate work on TV branch.
-- [x] Inventory actual TV and mobile source trees.
-- [x] Identify missing mobile files, dependencies and Android project configuration.
-- [x] Correct README to state the actual source baseline and incomplete status.
-- [x] Pause automatic push builds during the audit.
-- [x] Port the Build #1378 main.dart baseline, dependencies, AniList/external catalogue services, 15 unit tests and FLIXORA logo.
-- [x] Add Android TV manifest, Gradle configuration, launcher icons, launch themes and banner drawable.\n- [ ] Complete source/API mapping for remaining platform-specific behaviors and TV UI.
-- [x] Restore full Build #1378 application, Player and Subtitle source baseline in TV main.dart.\n- [ ] Complete TV-specific integration and verify Player/Subtitle behavior end-to-end.
-- [ ] Complete remote focus and Liquid Glass adaptation across all screens.
-- [ ] Validate CI Flutter project generation against committed Android Gradle/manifest/resources and make the Android build fully reproducible.
-- [ ] Run analyzer/tests and one controlled build after review.
-- [ ] Verify all acceptance flows on Android TV and Google TV devices.
+- [x] Freeze Mobile Build #1378 reference and keep mobile repo untouched.
+- [x] Restore full Build #1378 main.dart baseline and dependency set.
+- [x] Port shared modules, AniList/external catalogue, 15 unit tests and FLIXORA assets.
+- [x] Add committed Android TV Gradle/manifest/theme/launcher configuration.
+- [x] Remove CI's fragile generated-project mutation; bootstrap only Gradle wrapper files.
+- [x] Add TV Player and Hot Shorts remote-key handling.
+- [x] Add navigation focus feedback and selected-tab autofocus.
+- [x] Apply Liquid Glass to key Home, policy, navigation and Player surfaces.
+- [x] Update README and this audit to reflect the actual implementation.
 
-**No release or feature parity claim is valid until the remaining checks are completed.**
+## Not yet verified
+
+- [ ] Current branch clean Flutter dependency resolution.
+- [ ] Current branch `flutter analyze` and all Dart tests.
+- [ ] Current branch Rust/SparkBoxCore build and APK generation.
+- [ ] Installation, launcher discovery, focus behavior and playback on TV hardware.
+- [ ] Full feature parity and release acceptance.
+
+**Do not describe FLIXORA TV as finished or feature-complete until every relevant runtime acceptance test has passed.**
