@@ -11186,6 +11186,40 @@ class _HotShortsScreenState extends State<HotShortsScreen> {
     unawaited(_loadShort(index));
   }
 
+  KeyEventResult _handleShortsRemoteKey(KeyEvent event) {
+    if (event is! KeyDownEvent || _disposed) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowDown && _activeIndex + 1 < _items.length) {
+      unawaited(_pageController.nextPage(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+      ));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp && _activeIndex > 0) {
+      unawaited(_pageController.previousPage(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+      ));
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaPlayPause ||
+        key == LogicalKeyboardKey.mediaPlay ||
+        key == LogicalKeyboardKey.mediaPause) {
+      unawaited(_togglePlayback());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.space) {
+      _toggleControls();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   Widget _shortArtwork(Movie movie) {
     final imageUrl = movie.posterUrl.isNotEmpty
         ? movie.posterUrl
@@ -11462,14 +11496,18 @@ class _HotShortsScreenState extends State<HotShortsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        physics: const PageScrollPhysics(),
-        itemCount: _items.length,
-        onPageChanged: _onPageChanged,
-        itemBuilder: (context, index) =>
-            _shortPage(_items[index], index),
+      body: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) => _handleShortsRemoteKey(event),
+        child: PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          physics: const PageScrollPhysics(),
+          itemCount: _items.length,
+          onPageChanged: _onPageChanged,
+          itemBuilder: (context, index) =>
+              _shortPage(_items[index], index),
+        ),
       ),
     );
   }
