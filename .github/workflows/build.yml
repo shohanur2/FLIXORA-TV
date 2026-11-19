@@ -380,6 +380,9 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Run Dart and widget tests
+        run: flutter test --reporter expanded
+
       - name: Build APK
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
