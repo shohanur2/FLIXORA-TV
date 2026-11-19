@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flixora_tv/widgets/liquid_glass_surface.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
@@ -9,10 +11,10 @@ import 'package:http/http.dart' as http;
 import 'package:media_kit/media_kit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-const _bg = Color(0xFF080808);
-const _panel = Color(0xFF171717);
-const _gold = Color(0xFFD6AD45);
-const _muted = Color(0xFFB8B8B8);
+const _bg = Color(0xFF070810);
+const _panel = Color(0xFF171A28);
+const _gold = Color(0xFFE6BD63);
+const _muted = Color(0xFFB8BED0);
 const _imageBase = 'https://image.tmdb.org/t/p/';
 
 const _tmdbKey = String.fromEnvironment('TMDB_API_KEY');
@@ -92,6 +94,8 @@ class FlixoraTvApp extends StatelessWidget {
         theme: ThemeData(
           brightness: Brightness.dark,
           scaffoldBackgroundColor: _bg,
+          canvasColor: _bg,
+          cardColor: _panel,
           colorScheme: ColorScheme.fromSeed(
             seedColor: _gold,
             brightness: Brightness.dark,
@@ -307,23 +311,29 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
         },
         child: Builder(builder: (context) {
           final focused = Focus.of(context).hasFocus;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
-            decoration: BoxDecoration(
-              color: focused ? _gold : (selected ? _panel : Colors.transparent),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: focused ? _gold : Colors.transparent),
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 19, color: focused ? Colors.black : Colors.white70),
-                const SizedBox(width: 7),
-                Text(label, style: TextStyle(
-                  color: focused ? Colors.black : Colors.white70,
-                  fontWeight: focused ? FontWeight.bold : FontWeight.w500,
-                )),
-              ],
+          return AnimatedScale(
+            scale: focused ? 1.06 : 1,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            child: LiquidGlassSurface(
+              radius: 30,
+              blur: 18,
+              tint: focused
+                  ? _gold.withValues(alpha: .22)
+                  : (selected ? const Color(0xFF7771B8).withValues(alpha: .17) : Colors.white.withValues(alpha: .055)),
+              borderColor: focused ? _gold.withValues(alpha: .95) : Colors.white.withValues(alpha: .16),
+              glow: focused,
+              padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(icon, size: 19, color: focused ? _gold : Colors.white70),
+                  const SizedBox(width: 7),
+                  Text(label, style: TextStyle(
+                    color: focused ? Colors.white : Colors.white70,
+                    fontWeight: focused ? FontWeight.bold : FontWeight.w500,
+                  )),
+                ],
+              ),
             ),
           );
         }),
@@ -426,14 +436,29 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   }
 
   Widget _heroAction(String label, IconData icon, bool primary, VoidCallback action) =>
-      ElevatedButton.icon(
-        onPressed: action,
-        icon: Icon(icon, size: 19),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primary ? _gold : Colors.white.withValues(alpha: .12),
-          foregroundColor: primary ? Colors.black : Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+      LiquidGlassSurface(
+        radius: 28,
+        blur: 16,
+        tint: primary ? _gold.withValues(alpha: .20) : Colors.white.withValues(alpha: .09),
+        borderColor: primary ? _gold.withValues(alpha: .72) : Colors.white.withValues(alpha: .22),
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: action,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(icon, size: 19, color: primary ? _gold : Colors.white),
+                const SizedBox(width: 9),
+                Text(label, style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: primary ? FontWeight.bold : FontWeight.w600,
+                )),
+              ]),
+            ),
+          ),
         ),
       );
 
@@ -481,7 +506,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: _panel,
+        backgroundColor: const Color(0xEE171A28),
+        surfaceTintColor: Colors.transparent,
         title: Text(item.name),
         content: Text(item.overview.isEmpty ? 'No description available.' : item.overview),
         actions: [
