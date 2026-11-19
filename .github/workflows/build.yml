@@ -25,6 +25,34 @@ jobs:
       - name: Generate Android platform project
         run: flutter create --platforms=android --org com.flixora --project-name flixora_tv .
 
+      - name: Enable Android core library desugaring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle.kts")
+          s = p.read_text()
+
+          if "isCoreLibraryDesugaringEnabled = true" not in s:
+              marker = "compileOptions {"
+              if marker not in s:
+                  raise SystemExit("Android compileOptions block not found.")
+              start = s.index(marker)
+              end = s.index("}", start)
+              block = s[start:end]
+              if "isCoreLibraryDesugaringEnabled" not in block:
+                  s = s[:end] + "    isCoreLibraryDesugaringEnabled = true\\n" + s[end:]
+
+          if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:' not in s:
+              marker = "dependencies {"
+              if marker not in s:
+                  raise SystemExit("Android dependencies block not found.")
+              start = s.index(marker) + len(marker)
+              s = s[:start] + '\\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")' + s[start:]
+
+          p.write_text(s)
+          PY
+
       - name: Remove generated placeholder test
         run: rm -f test/widget_test.dart
 
