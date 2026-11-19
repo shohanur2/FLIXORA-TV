@@ -10151,6 +10151,116 @@ Entertainment Beyond Boundaries.
     );
   }
 
+  Widget _sidebarProfileButton(bool expanded) {
+    final user = supabaseClient?.auth.currentUser;
+    final avatarUrl = user?.userMetadata?['avatar_url']?.toString();
+    final selected = !_searchOpen && _tab == 3 && _profileSection == null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 12),
+      child: InkWell(
+        autofocus: selected,
+        focusColor: tvFocusPurple.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(16),
+        onFocusChange: (focused) {
+          if (focused && !_sidebarExpanded && mounted) {
+            setState(() => _sidebarExpanded = true);
+          }
+        },
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          setState(() {
+            _searchOpen = false;
+            _search = '';
+            _searchController.clear();
+            _searchLoading = false;
+            _searchError = null;
+            _profileSection = null;
+            _tab = 3;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 58,
+          padding: EdgeInsets.symmetric(horizontal: expanded ? 12 : 0),
+          decoration: BoxDecoration(
+            color: selected ? gold.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: selected ? gold.withValues(alpha: 0.45) : Colors.transparent),
+          ),
+          child: Row(
+            mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 19,
+                backgroundColor: panel,
+                backgroundImage: avatarUrl != null && avatarUrl.startsWith('http')
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl == null || !avatarUrl.startsWith('http')
+                    ? const Icon(Icons.person_rounded, color: gold, size: 22)
+                    : null,
+              ),
+              if (expanded) ...[
+                const SizedBox(width: 12),
+                Expanded(child: Text('Profile', maxLines: 1,
+                  style: TextStyle(color: selected ? gold : ink75,
+                    fontSize: 14, fontWeight: FontWeight.w700))),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sidebarSettingsButton(bool expanded) {
+    final selected = _tab == 3 && _profileSection == 'Settings';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 12),
+      child: InkWell(
+        focusColor: tvFocusPurple.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(14),
+        onFocusChange: (focused) {
+          if (focused && !_sidebarExpanded && mounted) {
+            setState(() => _sidebarExpanded = true);
+          }
+        },
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          setState(() {
+            _searchOpen = false;
+            _search = '';
+            _searchController.clear();
+            _searchLoading = false;
+            _searchError = null;
+            _tab = 3;
+            _profileSection = 'Settings';
+          });
+        },
+        child: Container(
+          height: 54,
+          padding: EdgeInsets.symmetric(horizontal: expanded ? 15 : 0),
+          decoration: BoxDecoration(
+            color: selected ? gold.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: selected ? gold.withValues(alpha: 0.42) : Colors.transparent),
+          ),
+          child: Row(
+            mainAxisAlignment: expanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+            children: [
+              Icon(Icons.settings_outlined, size: 23, color: selected ? gold : ink60),
+              if (expanded) ...[
+                const SizedBox(width: 14),
+                Text('Settings', style: TextStyle(color: selected ? gold : ink75,
+                  fontSize: 14, fontWeight: FontWeight.w700)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _tvSidebar() {
     final expanded = _sidebarExpanded;
     return Focus(
@@ -10172,7 +10282,12 @@ Entertainment Beyond Boundaries.
         ),
         child: Column(
           children: [
-            const SizedBox(height: 12),
+            _sidebarProfileButton(expanded),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              child: Divider(height: 1, color: gold.withValues(alpha: 0.18)),
+            ),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: InkWell(
@@ -10212,16 +10327,11 @@ Entertainment Beyond Boundaries.
               child: Divider(height: 1, color: gold.withValues(alpha: 0.18)),
             ),
             _sideNavItem(index: 0, icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home', expanded: expanded),
+            _sideNavItem(index: 4, icon: Icons.movie_outlined, activeIcon: Icons.movie_rounded, label: 'Movies / Series', expanded: expanded),
             _sideNavItem(index: 1, icon: Icons.history_rounded, activeIcon: Icons.history_rounded, label: 'History', expanded: expanded),
             _sideNavItem(index: 2, icon: Icons.video_library_outlined, activeIcon: Icons.video_library_rounded, label: 'Library', expanded: expanded),
-            _sideNavItem(index: 3, icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile', expanded: expanded),
             const Spacer(),
-            if (expanded)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text('FLIXORA', style: TextStyle(color: gold.withValues(alpha: 0.8),
-                  fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 2)),
-              ),
+            _sidebarSettingsButton(expanded),
           ],
         ),
       ),
