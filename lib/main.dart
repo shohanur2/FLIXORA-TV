@@ -9439,7 +9439,15 @@ Entertainment Beyond Boundaries.
         builder: (pageContext) => Scaffold(
           backgroundColor: bg,
           appBar: AppBar(
-            backgroundColor: bg,
+            backgroundColor: Colors.transparent,
+            flexibleSpace: const LiquidGlassSurface(
+              radius: 0,
+              blur: 16,
+              tint: Color(0xE60B0C14),
+              borderColor: Color(0x332F2A4A),
+              padding: EdgeInsets.zero,
+              child: SizedBox.expand(),
+            ),
             elevation: 0,
             leading: IconButton(
               tooltip: 'Back',
@@ -10086,6 +10094,9 @@ Entertainment Beyond Boundaries.
     final selected = _tab == index;
     return Expanded(
       child: InkWell(
+        autofocus: selected,
+        focusColor: tvFocusPurple.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           FocusScope.of(context).unfocus();
           setState(() {
