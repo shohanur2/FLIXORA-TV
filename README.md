@@ -29,10 +29,10 @@ A mobile-only interaction may receive a TV-specific equivalent, but its underlyi
 
 The current TV branch is still an incomplete port, not a finished playable release.
 
-- The existing `lib/main.dart` is a small TMDB Home scaffold with a hero carousel, two shelves and partial remote navigation.
-- Several shared service/native files have already been copied from Build #1378, including MovieBox/Rust wrappers, streaming policies, download service, PiP service, notification service and archive modules.
-- A reusable Liquid Glass surface exists, but app-wide theme and screen parity are not complete.
-- Full Mobile Build #1378 application integration, WeFeed/catalogue parity, complete Player and Subtitle parity, comprehensive remote traversal, and end-to-end TV testing remain incomplete.
+- `lib/main.dart` now uses the full 19,845-line Mobile Build #1378 source as the feature baseline; foundational remote focus visibility and a root directional focus traversal group have been added. Screen-by-screen D-pad behavior and TV layout remain unverified.
+- Shared MovieBox/Rust wrappers, streaming policies, AniList/external catalogue services, download service, PiP service, notification service, archive modules and 15 mobile unit tests have been ported.
+- Build #1378 dependencies, FLIXORA logo, Android TV Leanback manifest, landscape configuration, launcher icon densities, TV banner drawable and Android Gradle configuration are present. App-wide Liquid Glass styling and complete large-screen layout adaptation are not complete.
+- MovieBox/WeFeed integration, Admin/Supabase catalogue merge, Player and Subtitle runtime parity, comprehensive remote traversal, and end-to-end TV testing remain incomplete.
 - Presence of a Dart wrapper or native library build step does not by itself prove the corresponding feature works on a TV device.
 
 See [the detailed Build #1378 audit](docs/BUILD_1378_SOURCE_AUDIT.md) for the source inventory, known gaps and validation plan.
