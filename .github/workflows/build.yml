@@ -68,6 +68,336 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Build FLIXORA Rust playback core
+        run: |
+          cargo install cargo-ndk --locked
+          export ANDROID_NDK_HOME="$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -n "$ANDROID_NDK_HOME"
+          cargo test --manifest-path rust/flixora_core/Cargo.toml
+          cd rust/flixora_core
+          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -o ../../android/app/src/main/jniLibs build --release
+
+      - name: Build SparkBoxCore MovieBox/WeFeed client
+        env:
+          SPARKBOX_CORE_REV: f4bc3c561a3eb723bf9c466159e04aae98f45d3c
+        run: |
+          set -euo pipefail
+          export ANDROID_NDK_HOME="$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -n "$ANDROID_NDK_HOME"
+
+          git init /tmp/SparkBoxCore
+          git -C /tmp/SparkBoxCore remote add origin https://github.com/devfahim00/SparkBoxCore.git
+          git -C /tmp/SparkBoxCore fetch --depth 1 origin "$SPARKBOX_CORE_REV"
+          git -C /tmp/SparkBoxCore checkout --detach FETCH_HEAD
+
+          # Keep the upstream core's guest-client region aligned with FLIXORA's
+          # Bangladesh audience while retaining its built-in H5 fallback.
+          python3 - <<'PY'
+          from pathlib import Path
+
+          ffi_source = Path("/tmp/SparkBoxCore/sparkbox-ffi/src/lib.rs")
+          ffi_content = ffi_source.read_text()
+          old_import = "use sparkbox_core::{CoreError, MediaItem, MovieBoxClient, StreamKind};"
+          new_import = "use sparkbox_core::{Config, CoreError, MediaItem, MovieBoxClient, StreamKind};"
+          old_client = "CLIENT.get_or_init(MovieBoxClient::new)"
+          new_client = """CLIENT.get_or_init(|| {
+                  let mut config = Config::default();
+                  config.region = "BD".to_string();
+                  config.timezone = "Asia/Dhaka".to_string();
+                  MovieBoxClient::with_config(config)
+              })"""
+          if old_import not in ffi_content or old_client not in ffi_content:
+              raise SystemExit("SparkBoxCore FFI source changed; review the Bangladesh config patch.")
+          ffi_content = ffi_content.replace(old_import, new_import, 1)
+          ffi_content = ffi_content.replace(old_client, new_client, 1)
+          ffi_source.write_text(ffi_content)
+
+          # The upstream signer hard-codes India in x-client-info. Apply the
+          # Config region/timezone to the signed mobile header as well.
+          mobile_source = Path("/tmp/SparkBoxCore/sparkbox-core/src/mobile.rs")
+          mobile_content = mobile_source.read_text()
+          old_info = """        ins(
+                      &mut h,
+                      "x-client-info",
+                      client_info(
+                          v4,
+                          &self.device_id,
+                          if v4 {
+                              self.config.client_info_v4.as_deref()
+                          } else {
+                              self.config.client_info_v3.as_deref()
+                          },
+                      ),
+                  );"""
+          new_info = """        let mut client_info_json: Value = serde_json::from_str(&client_info(
+                      v4,
+                      &self.device_id,
+                      if v4 {
+                          self.config.client_info_v4.as_deref()
+                      } else {
+                          self.config.client_info_v3.as_deref()
+                      },
+                  ))
+                  .unwrap_or_else(|_| serde_json::json!({}));
+                  if let Some(info) = client_info_json.as_object_mut() {
+                      info.insert("region".into(), Value::String(self.config.region.clone()));
+                      info.insert("timezone".into(), Value::String(self.config.timezone.clone()));
+                  }
+                  ins(&mut h, "x-client-info", client_info_json.to_string());"""
+          if old_info not in mobile_content:
+              raise SystemExit("SparkBoxCore mobile header source changed; review the Bangladesh header patch.")
+          mobile_content = mobile_content.replace(old_info, new_info, 1)
+          mobile_source.write_text(mobile_content)
+
+          # Refresh expired H5 guest tokens on the actual play endpoint.
+          # The upstream play call previously reused the token captured when
+          # details opened, even after other calls had already refreshed it.
+          h5_source = Path("/tmp/SparkBoxCore/sparkbox-core/src/h5.rs")
+          h5_content = h5_source.read_text()
+          old_play_request = """            if let Some(t) = &d.h5_token {
+                          if !t.trim().is_empty() {
+                              ins(&mut h, "authorization", format!("Bearer {t}"));
+                          }
+                      }
+                      let r = self.http.get(&url).headers(h).send().await?;
+                      let status = r.status().as_u16();
+                      let text = r.text().await?;
+                      let root = try_json(&text).unwrap_or_default();
+                      let data = root.get("data").and_then(Value::as_object);"""
+          new_play_request = """            let cached_token = self.h5_guest.lock().await.clone().or_else(|| d.h5_token.clone());
+                      if let Some(t) = &cached_token {
+                          if !t.trim().is_empty() {
+                              ins(&mut h, "authorization", format!("Bearer {t}"));
+                          }
+                      }
+                      let response = self.http.get(&url).headers(h.clone())
+                          .timeout(std::time::Duration::from_secs(12))
+                          .send().await?;
+                      let mut status = response.status().as_u16();
+                      let mut text = response.text().await?;
+                      let mut root = try_json(&text).unwrap_or_default();
+                      let has_streams = |value: &Map<String, Value>| {
+                          let data = value.get("data").and_then(Value::as_object);
+                          ["dash", "hls", "streams"].iter().any(|key| {
+                              !get_arr(data.and_then(|d| d.get(*key))).is_empty()
+                          })
+                      };
+                      if matches!(status, 400 | 401 | 441) || (status == 200 && !has_streams(&root)) {
+                          if let Some(fresh_token) = self.h5_token(true).await? {
+                              let mut retry_headers = h;
+                              retry_headers.remove(reqwest::header::AUTHORIZATION);
+                              ins(&mut retry_headers, "authorization", format!("Bearer {fresh_token}"));
+                              let retry_response = self.http.get(&url).headers(retry_headers)
+                                  .timeout(std::time::Duration::from_secs(12))
+                                  .send().await?;
+                              status = retry_response.status().as_u16();
+                              text = retry_response.text().await?;
+                              root = try_json(&text).unwrap_or_default();
+                          }
+                      }
+                      let data = root.get("data").and_then(Value::as_object);"""
+          if old_play_request not in h5_content:
+              raise SystemExit("SparkBoxCore play request source changed; review the token-refresh patch.")
+          h5_content = h5_content.replace(old_play_request, new_play_request, 1)
+
+          # Restore MovieBox-native subtitle discovery and the native subtitle-search fallback.
+          # Keep the current season/episode and title with each successful play attempt.
+          import re
+          old_decl = "let mut cap_keys: Vec<(String, String)> = Vec::new();"
+          if old_decl not in h5_content:
+              raise SystemExit("SparkBoxCore cap_keys declaration changed.")
+          h5_content = h5_content.replace(old_decl, "let mut cap_keys: Vec<(String, String, i64, i64, String)> = Vec::new();", 1)
+          old_sig = "cap_keys: &mut Vec<(String, String)>,"
+          if old_sig not in h5_content:
+              raise SystemExit("SparkBoxCore play_once subtitle signature changed.")
+          h5_content = h5_content.replace(old_sig, "cap_keys: &mut Vec<(String, String, i64, i64, String)>,", 1)
+          push_pattern = re.compile(r'cap_keys\.push\(\(\s*sid\.to_string\(\),\s*if first_stream_id\.is_empty\(\) \{\s*format!\("\{sid\}\|\{se\}\|\{ep\}"\)\s*\} else \{\s*first_stream_id\s*\},\s*\)\);', re.S)
+          push_replacement = """cap_keys.push((
+                      sid.to_string(),
+                      if first_stream_id.is_empty() {
+                          format!("{sid}|{se}|{ep}")
+                      } else {
+                          first_stream_id
+                      },
+                      se,
+                      ep,
+                      d.title.clone(),
+                  ));"""
+          h5_content, push_count = push_pattern.subn(lambda _: push_replacement, h5_content, count=1)
+          if push_count != 1:
+              raise SystemExit("SparkBoxCore cap_keys.push context changed; refusing an unsafe patch.")
+
+          caption_start = h5_content.find("    /// External subtitle tracks for the resolved (subjectId, streamId) pairs,")
+          caption_end = h5_content.find("\n}\n\n/// Dart-style", caption_start)
+          if caption_start < 0 or caption_end < 0:
+              raise SystemExit("SparkBoxCore caption loader changed; review the subtitle patch.")
+          caption_impl = r'''    /// MovieBox-native captions plus title/episode-scoped subtitle search.
+          async fn load_captions(
+              &self,
+              cap_keys: &[(String, String, i64, i64, String)],
+              subtitles: &mut Vec<SubtitleLink>,
+          ) {
+              let mut seen = std::collections::HashSet::new();
+              let keys: Vec<&(String, String, i64, i64, String)> = cap_keys
+                  .iter()
+                  .filter(|key| seen.insert((*key).clone()))
+                  .collect();
+
+              for (sid, stream_id, season, episode, title) in keys {
+                  if !stream_id.is_empty() && !stream_id.contains('|') {
+                      let path = format!(
+                          "/wefeed-mobile-bff/subject-api/get-stream-captions?subjectId={sid}&streamId={stream_id}"
+                      );
+                      if let Some(root) = self.mobile_get(&path).await {
+                          Self::append_caption_items(&root, subtitles);
+                      }
+                  }
+
+                  // resourceId is returned by subject-api/get; never substitute streamId.
+                  let detail_path = format!("/wefeed-mobile-bff/subject-api/get?subjectId={sid}");
+                  let resource_id = if let Some(root) = self.mobile_get(&detail_path).await {
+                      let data = root.get("data").and_then(Value::as_object);
+                      let subject = data
+                          .and_then(|value| value.get("subject"))
+                          .and_then(Value::as_object);
+                      let detectors = get_arr(data.and_then(|value| value.get("resourceDetectors")));
+                      let nested = get_arr(subject.and_then(|value| value.get("resourceDetectors")));
+                      detectors
+                          .into_iter()
+                          .chain(nested)
+                          .map(|detector| s(detector, "resourceId"))
+                          .find(|value| !value.trim().is_empty())
+                          .unwrap_or_default()
+                  } else {
+                      String::new()
+                  };
+                  let resource_id = if resource_id.is_empty() { sid.as_str() } else { resource_id.as_str() };
+                  let ext_path = format!(
+                      "/wefeed-mobile-bff/subject-api/get-ext-captions?resourceId={resource_id}&subjectId={sid}&episode={episode}"
+                  );
+                  if let Some(root) = self.mobile_get(&ext_path).await {
+                      Self::append_caption_items(&root, subtitles);
+                  }
+
+                  // Native subtitle-search endpoint. For series, include SxxEyy so
+                  // results are scoped to the currently selected episode.
+                  let query = if *season > 0 && *episode > 0 {
+                      format!("{title} S{season:02}E{episode:02}")
+                  } else {
+                      title.clone()
+                  };
+                  if !query.trim().is_empty() {
+                      let encoded: String = url::form_urlencoded::byte_serialize(query.as_bytes()).collect();
+                      let search_path = format!(
+                          "/wefeed-mobile-bff/subject-api/subtitle-search?q={encoded}"
+                      );
+                      if let Some(root) = self.mobile_get(&search_path).await {
+                          Self::append_search_caption_items(&root, subtitles, *season, *episode);
+                      }
+                  }
+              }
+          }
+
+          fn append_caption_items(root: &Map<String, Value>, subtitles: &mut Vec<SubtitleLink>) {
+              let data = root.get("data").and_then(Value::as_object);
+              let ext = get_arr(data.and_then(|value| value.get("extCaptions")));
+              let items = get_arr(data.and_then(|value| value.get("items")));
+              let list = get_arr(data.and_then(|value| value.get("list")));
+              let captions = get_arr(data.and_then(|value| value.get("captions")));
+              let values = if !ext.is_empty() { ext } else if !items.is_empty() { items } else if !list.is_empty() { list } else { captions };
+              Self::append_values(values, subtitles);
+          }
+
+          fn append_search_caption_items(
+              root: &Map<String, Value>,
+              subtitles: &mut Vec<SubtitleLink>,
+              season: i64,
+              episode: i64,
+          ) {
+              let data = root.get("data").and_then(Value::as_object);
+              let items = get_arr(data.and_then(|value| value.get("items")));
+              let list = get_arr(data.and_then(|value| value.get("list")));
+              let values = if !items.is_empty() { items } else { list };
+              // Explicit season/episode metadata must match; the query itself is
+              // also episode-qualified for providers that omit these fields.
+              let filtered: Vec<&Map<String, Value>> = values.into_iter().filter(|item| {
+                  let item_se = s(item, "se").parse::<i64>()
+                      .or_else(|_| s(item, "season").parse::<i64>()).unwrap_or(0);
+                  let item_ep = s(item, "ep").parse::<i64>()
+                      .or_else(|_| s(item, "episode").parse::<i64>())
+                      .or_else(|_| s(item, "episodeNumber").parse::<i64>()).unwrap_or(0);
+                  !(season > 0 && episode > 0)
+                      || !((item_se > 0 && item_se != season) || (item_ep > 0 && item_ep != episode))
+              }).collect();
+              Self::append_values(filtered, subtitles);
+          }
+
+          fn append_values<'a>(values: Vec<&'a Map<String, Value>>, subtitles: &mut Vec<SubtitleLink>) {
+              for item in values {
+                  let url = ["url", "downloadUrl", "subtitleUrl"]
+                      .iter()
+                      .map(|key| s(item, key))
+                      .find(|value| !value.trim().is_empty())
+                      .unwrap_or_default();
+                  if url.trim().is_empty() || subtitles.iter().any(|existing| existing.url == url) {
+                      continue;
+                  }
+                  let language = ["lanName", "lan", "language", "languageName", "lang"]
+                      .iter()
+                      .map(|key| s(item, key))
+                      .find(|value| !value.trim().is_empty())
+                      .unwrap_or_else(|| "Unknown".to_string());
+                  let release = ["releaseName", "fileName", "name", "title"]
+                      .iter()
+                      .map(|key| s(item, key))
+                      .find(|value| !value.trim().is_empty())
+                      .unwrap_or_default();
+                  let base_label = if release.is_empty() { language.clone() } else { format!("{language} · {release}") };
+                  let mut label = base_label.clone();
+                  let mut suffix = 2;
+                  while subtitles.iter().any(|existing| existing.label == label) {
+                      label = format!("{base_label} ({suffix})");
+                      suffix += 1;
+                  }
+                  subtitles.push(SubtitleLink { label, url });
+              }
+          }
+          '''
+          h5_content = h5_content[:caption_start] + caption_impl + h5_content[caption_end:]
+          h5_source.write_text(h5_content)
+          PY
+
+          python3 "$GITHUB_WORKSPACE/scripts/patch_sparkbox_short_tv.py" /tmp/SparkBoxCore
+          python3 "$GITHUB_WORKSPACE/scripts/patch_sparkbox_fast_stream.py" /tmp/SparkBoxCore
+
+          cd /tmp/SparkBoxCore
+          cargo test --workspace --locked
+          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 \
+            -o "$GITHUB_WORKSPACE/android/app/src/main/jniLibs" \
+            build --release -p sparkbox-ffi --locked
+
+          test -s "$GITHUB_WORKSPACE/android/app/src/main/jniLibs/arm64-v8a/libsparkbox_ffi.so"
+          test -s "$GITHUB_WORKSPACE/android/app/src/main/jniLibs/armeabi-v7a/libsparkbox_ffi.so"
+          test -s "$GITHUB_WORKSPACE/android/app/src/main/jniLibs/x86_64/libsparkbox_ffi.so"
+
       - name: Install dependencies
         run: flutter pub get
 
