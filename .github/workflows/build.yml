@@ -39,16 +39,16 @@ jobs:
                   raise SystemExit("Android compileOptions block not found.")
               start = s.index(marker)
               end = s.index("}", start)
-              s = s[:end] + "\\n        isCoreLibraryDesugaringEnabled = true" + s[end:]
+              s = s[:end] + "\n        isCoreLibraryDesugaringEnabled = true" + s[end:]
 
           dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")'
           if dependency not in s:
               marker = "dependencies {"
               if marker in s:
                   start = s.index(marker) + len(marker)
-                  s = s[:start] + "\\n    " + dependency + s[start:]
+                  s = s[:start] + "\n    " + dependency + s[start:]
               else:
-                  s = s.rstrip() + "\\n\\ndependencies {\\n    " + dependency + "\\n}\\n"
+                  s = s.rstrip() + "\n\ndependencies {\n    " + dependency + "\n}\n"
 
           p.write_text(s)
           PY
