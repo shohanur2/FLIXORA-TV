@@ -11205,10 +11205,16 @@ class _HotShortsScreenState extends State<HotShortsScreen> {
       ));
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.mediaPlayPause ||
-        key == LogicalKeyboardKey.mediaPlay ||
-        key == LogicalKeyboardKey.mediaPause) {
+    if (key == LogicalKeyboardKey.mediaPlayPause) {
       unawaited(_togglePlayback());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaPlay) {
+      if (!_playing) unawaited(_togglePlayback());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.mediaPause) {
+      if (_playing) unawaited(_togglePlayback());
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.select ||
