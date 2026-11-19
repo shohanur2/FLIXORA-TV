@@ -20,93 +20,28 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Generate Android platform project
-        run: flutter create --platforms=android --org com.flixora --project-name flixora_tv .
-
-      - name: Verify Android core library desugaring
+      - name: Bootstrap Gradle wrapper without overwriting TV Android configuration
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          set -euo pipefail
+          mkdir -p /tmp/flixora-tv-wrapper
+          flutter create --platforms=android --org com.flixora --project-name flixora /tmp/flixora-tv-wrapper
+          cp /tmp/flixora-tv-wrapper/android/gradlew android/gradlew
+          cp /tmp/flixora-tv-wrapper/android/gradlew.bat android/gradlew.bat
+          cp /tmp/flixora-tv-wrapper/android/gradle/wrapper/gradle-wrapper.jar android/gradle/wrapper/gradle-wrapper.jar
+          chmod +x android/gradlew
 
-          candidates = [
-              Path("android/app/build.gradle"),
-              Path("android/app/build.gradle.kts"),
-          ]
-          p = next((candidate for candidate in candidates if candidate.exists()), None)
-          if p is None:
-              raise SystemExit("Android app Gradle file not found.")
-          s = p.read_text()
-          is_kotlin = p.suffix == ".kts"
-
-          if is_kotlin:
-              enabled = "isCoreLibraryDesugaringEnabled = true"
-              dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")'
-          else:
-              enabled = "coreLibraryDesugaringEnabled true"
-              dependency = 'coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"'
-
-          if enabled not in s:
-              marker = "compileOptions {"
-              if marker not in s:
-                  raise SystemExit("Android compileOptions block not found.")
-              start = s.index(marker)
-              end = s.index("}", start)
-              s = s[:end] + chr(10) + "        " + enabled + s[end:]
-
-          if dependency not in s and "desugar_jdk_libs:" not in s:
-              marker = "dependencies {"
-              if marker in s:
-                  start = s.index(marker) + len(marker)
-                  s = s[:start] + chr(10) + "    " + dependency + s[start:]
-              else:
-                  s = s.rstrip() + chr(10) * 2 + "dependencies {" + chr(10) + "    " + dependency + chr(10) + "}" + chr(10)
-
-          p.write_text(s)
-          PY
+      - name: Verify committed Android TV configuration
+        run: |
+          test -f android/app/build.gradle
+          test -f android/app/src/main/AndroidManifest.xml
+          grep -q 'android.intent.category.LEANBACK_LAUNCHER' android/app/src/main/AndroidManifest.xml
+          grep -q 'android.software.leanback' android/app/src/main/AndroidManifest.xml
+          grep -q 'coreLibraryDesugaringEnabled true' android/app/build.gradle
+          grep -q 'coreLibraryDesugaring.*desugar_jdk_libs' android/app/build.gradle
+          grep -q 'android:banner="@drawable/flixora_tv_banner"' android/app/src/main/AndroidManifest.xml
 
       - name: Remove generated placeholder test
         run: rm -f test/widget_test.dart
-
-      - name: Configure Android TV launcher and landscape mode
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text()
-          leanback_category = '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />'
-
-          if "android.intent.category.LEANBACK_LAUNCHER" not in s:
-              lines = s.splitlines()
-              launcher_index = next(
-                  (i for i, line in enumerate(lines)
-                   if "android.intent.category.LAUNCHER" in line),
-                  None,
-              )
-              if launcher_index is None:
-                  raise SystemExit("Could not locate Android launcher category. Manifest contents:\n" + s)
-              indent = lines[launcher_index][:len(lines[launcher_index]) - len(lines[launcher_index].lstrip())]
-              lines.insert(launcher_index + 1, indent + leanback_category)
-              s = "\n".join(lines) + "\n"
-
-          if "android.software.leanback" not in s:
-              s = s.replace(
-                  "</manifest>",
-                  '    <uses-feature android:name="android.software.leanback" android:required="false" />\n</manifest>',
-              )
-
-          activity_start = s.find("<activity")
-          while activity_start != -1:
-              activity_end = s.find(">", activity_start)
-              tag = s[activity_start:activity_end + 1]
-              if "MainActivity" in tag:
-                  if "android:screenOrientation" not in tag:
-                      s = s[:activity_end] + ' android:screenOrientation="landscape"' + s[activity_end:]
-                  break
-              activity_start = s.find("<activity", activity_end + 1)
-
-          p.write_text(s)
-          PY
 
       - name: Setup Java
         uses: actions/setup-java@v4
