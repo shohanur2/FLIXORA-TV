@@ -30,7 +30,7 @@ The TV `lib/main.dart` has now been replaced with the complete 19,845-line Mobil
 ### Main application and UI
 
 - Mobile source: `lib/main.dart` (19,845 lines at the reference revision)
-- TV source: `lib/main.dart` is currently a smaller independent scaffold.
+- TV source: `lib/main.dart` is restored from the exact Build #1378 source as the full feature baseline; TV-specific adaptation remains in progress.
 - Mobile `main.dart` contains substantial catalogue, navigation, settings, Player and Subtitle integration. A file-level copy without dependency and TV focus adaptation is not sufficient.
 
 ### Mobile source modules missing from TV at audit time
@@ -87,7 +87,7 @@ The TV pubspec has been aligned with the Mobile Build #1378 dependency set, incl
 | PiP/Mini Player | Mobile PiP service copied; Android TV support and integration unverified | Incomplete |
 | Liquid Glass | Reusable surface exists; app-wide conversion still outstanding | Partial |
 | D-pad/remote | Root focus traversal/highlight enabled; screen-by-screen directional behavior unverified | Incomplete |
-| Android TV launcher | CI currently injects Leanback category; no committed full TV launcher resources | Partial |
+| Android TV launcher | Committed Leanback manifest, landscape, icon densities and banner drawable | Partial |
 | Device testing | No verified Android TV / Google TV device acceptance report | Not done |
 
 ## Required implementation order
