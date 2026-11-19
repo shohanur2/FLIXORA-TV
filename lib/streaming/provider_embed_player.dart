@@ -1,5 +1,6 @@
 import 'dart:async';
 
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -216,7 +217,7 @@ window.addEventListener('message', function(event) {
     } catch (_) {
       if (!mounted) return;
       _reportProviderFailure(
-        'Could not start ' + widget.source.name + '. Try another available stream.',
+        'Could not start ${widget.source.name}. Try another available stream.',
       );
     }
   }
