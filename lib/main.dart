@@ -18585,6 +18585,17 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
     );
   }
 
+  Widget _playerGlassPanel(Widget child, {double radius = 18}) {
+    return LiquidGlassSurface(
+      radius: radius,
+      blur: 12,
+      tint: const Color(0xCC090A12),
+      borderColor: tvFocusPurple.withValues(alpha: 0.42),
+      padding: EdgeInsets.zero,
+      child: child,
+    );
+  }
+
   Widget _playerBody() {
     if (widget.movie.isMovieBox && _loadingQualities && !_initialized) {
       return Container(
@@ -18773,9 +18784,9 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Positioned(top: 0, left: 0, right: 0, child: _topControls()),
+                    Positioned(top: 0, left: 0, right: 0, child: _playerGlassPanel(_topControls())),
                     Center(child: _centerControls()),
-                    Positioned(left: 0, right: 0, bottom: 0, child: _bottomControls()),
+                    Positioned(left: 0, right: 0, bottom: 0, child: _playerGlassPanel(_bottomControls())),
                   ],
                 ),
               ),
