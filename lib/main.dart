@@ -581,10 +581,17 @@ class FlixoraCachedImage extends StatelessWidget {
     if (existing != null) return existing;
     final future = FlixoraImageCacheManager.instance.getFileFromCache(url);
     _offlineLookups[url] = future;
+    // Keep only in-flight lookups. Successful results are already held by
+    // the disk cache; retaining every completed Future here would grow this
+    // map for the lifetime of a long-running TV session.
     future.then<void>((info) {
-      if (info == null || !info.file.existsSync()) _offlineLookups.remove(url);
+      if (identical(_offlineLookups[url], future)) {
+        _offlineLookups.remove(url);
+      }
     }, onError: (Object error, StackTrace stackTrace) {
-      _offlineLookups.remove(url);
+      if (identical(_offlineLookups[url], future)) {
+        _offlineLookups.remove(url);
+      }
     });
     return future;
   }
