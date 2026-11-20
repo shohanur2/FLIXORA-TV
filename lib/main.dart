@@ -6394,6 +6394,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 final active = selected == value;
                 return InkWell(
                   borderRadius: BorderRadius.circular(8),
+                  focusColor: tvFocusPurple.withValues(alpha: 0.32),
+                  hoverColor: tvFocusPurple.withValues(alpha: 0.16),
                   onTap: () {
                     setState(() => _sectionFilters[title] = value);
                     if (title == 'Trending Movies' && value != 'All') {
@@ -6437,16 +6439,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     return SizedBox(
       height: 205,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemExtent: 118,
-        itemCount: movies.length,
-        itemBuilder: (context, index) {
-          final movie = movies[index];
-          final hasHindi = _hasHindiAudio(movie);
-          return Container(
+      child: FocusTraversalGroup(
+        policy: ReadingOrderTraversalPolicy(),
+        child: ListView.builder(
+          primary: false,
+          cacheExtent: 236,
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          itemExtent: 118,
+          itemCount: movies.length,
+          itemBuilder: (context, index) {
+            final movie = movies[index];
+            final hasHindi = _hasHindiAudio(movie);
+            return Container(
             key: ValueKey('${movie.mediaType}:${movie.tmdbId > 0 ? movie.tmdbId : movie.id}'),
             width: 110,
             margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -6460,6 +6466,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               borderRadius: BorderRadius.circular(8),
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
+                focusColor: tvFocusPurple.withValues(alpha: 0.38),
+                hoverColor: tvFocusPurple.withValues(alpha: 0.18),
                 onTap: _isOpeningTitle ? null : () => _playMovie(movie),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -6541,8 +6549,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
             ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -6582,7 +6591,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               }
               return false;
             },
-            child: PageView.builder(
+            child: Focus(
+              onKeyEvent: (node, event) {
+                if (event is! KeyDownEvent || slides.length < 2) {
+                  return KeyEventResult.ignored;
+                }
+                if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                  final previous = (_slide - 1 + slides.length) % slides.length;
+                  _sliderController.animateToPage(
+                    previous,
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                  );
+                  return KeyEventResult.handled;
+                }
+                if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  final next = (_slide + 1) % slides.length;
+                  _sliderController.animateToPage(
+                    next,
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                  );
+                  return KeyEventResult.handled;
+                }
+                if (event.logicalKey == LogicalKeyboardKey.select ||
+                    event.logicalKey == LogicalKeyboardKey.enter ||
+                    event.logicalKey == LogicalKeyboardKey.space) {
+                  _playMovie(slides[_slide.clamp(0, slides.length - 1)]);
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: PageView.builder(
               controller: _sliderController,
               physics: const BouncingScrollPhysics(),
               allowImplicitScrolling: true,
@@ -6643,6 +6683,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 );
               },
+              ),
             ),
           ),
           Positioned(
@@ -10355,9 +10396,45 @@ Entertainment Beyond Boundaries.
     return 'FLIXORA';
   }
 
+  void _handleHomeBack() {
+    if (_searchOpen) {
+      _closeSearch();
+      return;
+    }
+    if (_showRanking) {
+      setState(() => _showRanking = false);
+      return;
+    }
+    if (_tab == 3 && _profileSection != null) {
+      setState(() => _profileSection = null);
+      return;
+    }
+    if (_tab == 2 && _librarySection != 'Downloads') {
+      setState(() => _librarySection = 'Downloads');
+      return;
+    }
+    if (_tab != 0) {
+      setState(() {
+        _tab = 0;
+        _profileSection = null;
+      });
+      return;
+    }
+    if (_sidebarExpanded) {
+      setState(() => _sidebarExpanded = false);
+      return;
+    }
+    SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _handleHomeBack();
+      },
+      child: Scaffold(
       extendBodyBehindAppBar: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -10449,6 +10526,7 @@ Entertainment Beyond Boundaries.
             ],
           ),
         ),
+      ),
       ),
     );
   }
