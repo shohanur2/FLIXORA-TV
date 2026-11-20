@@ -399,6 +399,31 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: flutter build apk --release --dart-define=TMDB_API_KEY="$TMDB_API_KEY" --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
+      - name: Verify universal APK contains all supported TV CPU architectures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          apk = Path("build/app/outputs/flutter-apk/app-release.apk")
+          if not apk.is_file():
+              raise SystemExit("Release APK was not produced.")
+          expected_abis = ("arm64-v8a", "armeabi-v7a", "x86_64")
+          required_libs = ("libflutter.so", "libsparkbox_ffi.so")
+          with ZipFile(apk) as archive:
+              names = set(archive.namelist())
+              missing = [
+                  f"lib/{abi}/{library}"
+                  for abi in expected_abis
+                  for library in required_libs
+                  if f"lib/{abi}/{library}" not in names
+              ]
+          if missing:
+              raise SystemExit("APK is missing required ABI libraries: " + ", ".join(missing))
+          print("Universal APK verified: ARM64, ARM32 and x86_64 Flutter + playback libraries are packaged.")
+          print(f"APK size: {apk.stat().st_size:,} bytes")
+          PY
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
