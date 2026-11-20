@@ -152,9 +152,28 @@ class MovieBoxService {
     Future<T> Function() load,
   ) {
     final now = DateTime.now();
+
+    // Bound every in-memory MovieBox cache. Search and stream keys are
+    // user-driven, so without pruning they can grow for the lifetime of the
+    // TV app process. Expired entries are removed first; when the cache is
+    // still full, evict the oldest entry while preserving the requested key.
+    cache.removeWhere(
+      (_, entry) => now.difference(entry.createdAt) >= ttl,
+    );
+
     final existing = cache[key];
-    if (existing != null && now.difference(existing.createdAt) < ttl) {
-      return existing.future;
+    if (existing != null) return existing.future;
+
+    const maxEntries = 80;
+    if (cache.length >= maxEntries) {
+      final oldestEntries = cache.entries.toList()
+        ..sort(
+          (a, b) => a.value.createdAt.compareTo(b.value.createdAt),
+        );
+      final removeCount = cache.length - maxEntries + 1;
+      for (final entry in oldestEntries.take(removeCount)) {
+        if (entry.key != key) cache.remove(entry.key);
+      }
     }
 
     final future = load();
