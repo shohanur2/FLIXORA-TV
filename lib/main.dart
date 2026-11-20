@@ -6617,7 +6617,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 if (event.logicalKey == LogicalKeyboardKey.select ||
                     event.logicalKey == LogicalKeyboardKey.enter ||
                     event.logicalKey == LogicalKeyboardKey.space) {
-                  _playMovie(slides[_slide.clamp(0, slides.length - 1)]);
+                  final selectedIndex = _slide < 0
+                      ? 0
+                      : (_slide >= slides.length ? slides.length - 1 : _slide);
+                  _playMovie(slides[selectedIndex]);
                   return KeyEventResult.handled;
                 }
                 return KeyEventResult.ignored;
