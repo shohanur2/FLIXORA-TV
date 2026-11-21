@@ -12,7 +12,7 @@
         </shape>
     </item>
     <item
-        android:drawable="@drawable/flixora_tv_icon"
+        android:drawable="@mipmap/ic_launcher"
         android:width="104dp"
         android:height="104dp"
         android:gravity="center" />
