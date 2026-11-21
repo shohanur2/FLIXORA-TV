@@ -12403,7 +12403,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
         title: 'FLIXORA',
         // Keep text subtitles on the Flutter SubtitleView overlay. Native libass
         // rendering disables that overlay and needs an Android font asset.
-        bufferSize: 64 * 1024 * 1024,
+        // Keep native buffering modest for low-memory Android TV boxes.
+        bufferSize: 16 * 1024 * 1024,
         libass: false,
       ),
     );
@@ -13846,6 +13847,11 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
           await _player.open(
             Media(url, httpHeaders: _headersForQuality(candidate)),
             play: true,
+          ).timeout(
+            const Duration(seconds: 28),
+            onTimeout: () => throw TimeoutException(
+              'The TV could not open this stream within 28 seconds.',
+            ),
           );
           if (_isDisposed || requestToken != _movieBoxPlaybackRequestToken) {
             return false;
@@ -14435,9 +14441,17 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
       if (_isMiniPlayer) _miniPlayerOverlayRevision.value++;
       if (value) {
         _bufferingRecoveryTimer?.cancel();
-        _bufferingRecoveryTimer = Timer(const Duration(seconds: 10), () {
+        _bufferingRecoveryTimer = Timer(const Duration(seconds: 12), () async {
           if (!mounted || _isDisposed || !_isBuffering) return;
-          unawaited(_recoverFromStalledBuffering());
+          await _recoverFromStalledBuffering();
+          // A weak TV or a dead CDN must never leave the Player spinning forever.
+          await Future<void>.delayed(const Duration(seconds: 18));
+          if (!mounted || _isDisposed || !_isBuffering || !_isPlaying) return;
+          setState(() {
+            _errorMessage =
+                'The stream is not responding. Check your connection or try another quality.';
+          });
+          if (_isMiniPlayer) _miniPlayerOverlayRevision.value++;
         });
       } else {
         _bufferingRecoveryTimer?.cancel();
@@ -14627,6 +14641,11 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
                   : _headersForQuality(candidate),
             ),
             play: true,
+          ).timeout(
+            const Duration(seconds: 28),
+            onTimeout: () => throw TimeoutException(
+              'The TV could not open this video within 28 seconds.',
+            ),
           );
           if (!mounted || _isDisposed) return;
 
@@ -15123,11 +15142,13 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> with WidgetsBindi
         // playback rebuffer briefly before resuming after an underrun.
         await platformPlayer.setProperty('cache', 'yes');
         await platformPlayer.setProperty('cache-pause', 'yes');
-        await platformPlayer.setProperty('demuxer-readahead-secs', '45');
-        await platformPlayer.setProperty('cache-secs', '45');
-        await platformPlayer.setProperty('demuxer-max-bytes', '128MiB');
-        await platformPlayer.setProperty('demuxer-max-back-bytes', '32MiB');
-        await platformPlayer.setProperty('cache-pause-wait', '1.0');
+        // Avoid reserving 160 MiB+ for cache on 2 GB / Mali-450 TVs.
+        // Short rolling cache keeps startup responsive without exhausting RAM.
+        await platformPlayer.setProperty('demuxer-readahead-secs', '12');
+        await platformPlayer.setProperty('cache-secs', '12');
+        await platformPlayer.setProperty('demuxer-max-bytes', '24MiB');
+        await platformPlayer.setProperty('demuxer-max-back-bytes', '8MiB');
+        await platformPlayer.setProperty('cache-pause-wait', '0.5');
         // Prefer keyframe seeks for faster response on network streams.
         // This can land a fraction earlier/later than frame-accurate seeking.
         await platformPlayer.setProperty('hr-seek', 'no');
