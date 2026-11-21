@@ -9,7 +9,7 @@
     <application
         android:label="FLIXORA TV"
         android:name="${applicationName}"
-        android:icon="@drawable/flixora_tv_icon"
+        android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/flixora_tv_banner">
         <service
             android:name=".DownloadForegroundService"
